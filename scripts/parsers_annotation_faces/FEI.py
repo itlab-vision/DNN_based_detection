@@ -123,9 +123,3 @@ def parse(annot,_path_annot,_path_write):
 if __name__== "__main__":
     annot, _path_annot, _path_write = sys.argv[1:4]
     parse(annot,_path_annot,_path_write)
-
-
-
-
-
-

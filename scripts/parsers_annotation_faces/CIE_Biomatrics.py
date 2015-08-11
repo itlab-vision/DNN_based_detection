@@ -158,4 +158,3 @@ def parse(name,nameImage,annot,file):
 if __name__== "__main__":
     annot,file, name, NameImage = sys.argv[1:5]
     parse(name,NameImage,annot,file)
-

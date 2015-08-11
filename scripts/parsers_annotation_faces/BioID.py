@@ -89,7 +89,3 @@ def parse(annot,name,NameImage):
 if __name__== "__main__":
     annot, name, NameImage = sys.argv[1:4]
     parse(annot, name, NameImage)
-
-
-
-

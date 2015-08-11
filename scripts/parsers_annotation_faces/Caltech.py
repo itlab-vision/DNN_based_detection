@@ -27,17 +27,3 @@ def parse(file,annotFile):
 if __name__== "__main__":
     file, annotFile = sys.argv[1:3]
     parse(file,annotFile)
-
-
-
-
-
-
-
-
-
-
-
-
-
-

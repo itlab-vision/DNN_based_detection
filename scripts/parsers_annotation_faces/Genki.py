@@ -25,4 +25,3 @@ def parse(fileAnnot,fileNameImag,annot,name):
 if __name__== "__main__":
     annot, name, fileAnnot, fileNameImag = sys.argv[1:4]
     parse(fileAnnot,fileNameImag,annot,name)
-

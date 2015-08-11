@@ -33,4 +33,3 @@ def parse(file,annotFile):
 if __name__== "__main__":
     annot, file = sys.argv[1:3]
     parse(file,annot)
-
