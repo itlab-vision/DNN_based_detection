@@ -50,70 +50,80 @@ n_points: 46
 143.976 143.223
 140.757 108.586
 }
-"""
+
 
 annot = open("D:/my-study/OpenCV/DataSet/DataSet_for_train_Faces_Detector/PositiveImage/annotation.txt",'a')
+_path_annot_ = "D:/my-study/OpenCV/DataSet/FEI/frontal/annot/"
+_path_write="DataSet_for_train_Faces_Detector/PositiveImage/FEI/frontal/"
+"""
 
-for i in range(200):
-    i+=1
-    file = open("D:/my-study/OpenCV/DataSet/FEI/frontal/annot/" + str(i) + "a.pts")
-    minX = 1000
-    minY = 1000
-    maxY =0
-    maxX=0
-    count = 0
-    for line in file:
-        if (count > 2 and line!="}\n"):
-            line = line[0: line.__len__() - 2]
-            mass= line.split()
-            if ( float(mass[0]) < minX):
-                minX = float(mass[0])
-            if (float(mass[1])>maxY):
-                maxY = float(mass[1])
-            if (float(mass[0])> maxX):
-                maxX = float(mass[0])
-            if (float(mass[1])< minY):
-                minY = float(mass[1])
-        count+=1
-        print(line)
-    x = minX
-    y = minY
-    w = maxX - minX
-    h = maxY - minY
-    file.close()
-    annot.write("DataSet_for_train_Faces_Detector/PositiveImage/FEI/frontal/" + str(i) + "a.jpg " + str(1) + " "+ str(x) + " " + str(y) + " " +
-                str(w) + " " + str(h + h*0.1) + " \n")
+def parse(annot,_path_annot,_path_write):
+    for i in range(200):
+        i+=1
+        file = open(_path_annot + str(i) + "a.pts")
+        minX = 1000
+        minY = 1000
+        maxY =0
+        maxX=0
+        count = 0
+        for line in file:
+            if (count > 2 and line!="}\n"):
+                line = line[0: line.__len__() - 2]
+                mass= line.split()
+                if ( float(mass[0]) < minX):
+                    minX = float(mass[0])
+                if (float(mass[1])>maxY):
+                    maxY = float(mass[1])
+                if (float(mass[0])> maxX):
+                    maxX = float(mass[0])
+                if (float(mass[1])< minY):
+                    minY = float(mass[1])
+            count+=1
+            print(line)
+        x = minX
+        y = minY
+        w = maxX - minX
+        h = maxY - minY
+        file.close()
+        annot.write(_path_write + str(i) + "a.jpg " + str(1) + " "+ str(x) + " " + str(y) + " " +
+                    str(w) + " " + str(h + h*0.1) + " \n")
 
-for i in range(200):
-    i+=1
-    file = open("D:/my-study/OpenCV/DataSet/FEI/frontal/annot/" + str(i) + "b.pts")
-    minX = 1000
-    minY = 1000
-    maxY =0
-    maxX=0
-    count = 0
-    for line in file:
-        if (count > 2 and line!="}\n"):
-            line = line[0: line.__len__() - 2]
-            mass= line.split()
-            if ( float(mass[0]) < minX):
-                minX = float(mass[0])
-            if (float(mass[1])>maxY):
-                maxY = float(mass[1])
-            if (float(mass[0])> maxX):
-                maxX = float(mass[0])
-            if (float(mass[1])< minY):
-                minY = float(mass[1])
-        count+=1
-        print(line)
-    x = minX
-    y = minY
-    w = maxX - minX
-    h = maxY - minY
-    file.close()
-    annot.write("DataSet_for_train_Faces_Detector/PositiveImage/FEI/frontal/" + str(1) + "b.jpg " + str(1) + " "+ str(x) + " " + str(y) + " " +
-                str(w) + " " + str(h + h*0.1) + " \n")
-annot.close()
+    for i in range(200):
+        i+=1
+        file = open(_path_annot_ + str(i) + "b.pts")
+        minX = 1000
+        minY = 1000
+        maxY =0
+        maxX=0
+        count = 0
+        for line in file:
+            if (count > 2 and line!="}\n"):
+                line = line[0: line.__len__() - 2]
+                mass= line.split()
+                if ( float(mass[0]) < minX):
+                    minX = float(mass[0])
+                if (float(mass[1])>maxY):
+                    maxY = float(mass[1])
+                if (float(mass[0])> maxX):
+                    maxX = float(mass[0])
+                if (float(mass[1])< minY):
+                    minY = float(mass[1])
+            count+=1
+            print(line)
+        x = minX
+        y = minY
+        w = maxX - minX
+        h = maxY - minY
+        file.close()
+        annot.write(_path_write + str(1) + "b.jpg " + str(1) + " "+ str(x) + " " + str(y) + " " +
+                    str(w) + " " + str(h + h*0.1) + " \n")
+    annot.close()
+
+
+
+if __name__== "__main__":
+    annot, _path_annot, _path_write = sys.argv[1:4]
+    parse(annot,_path_annot,_path_write)
 
 
 
