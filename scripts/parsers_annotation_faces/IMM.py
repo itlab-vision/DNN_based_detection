@@ -7,17 +7,15 @@ x and y in share images( 640*480)
 61 - mouth
 
 annot = open ("D:/my-study/OpenCV/DataSet/DataSet_for_train_Faces_Detector/PositiveImage/annotation.txt",'a')
-
 forannotName="DataSet_for_train_Faces_Detector/PositiveImage/IMM"
-
 name = "D:/my-study/OpenCV/DataSet/IMM/"
 """
+
+import sys
+
 def parse(annot,forannotName,name):
-
     for k in range(40):
-
         k+=1
-
         if k<10:
             name += "0"
             forannotName+="0"
@@ -26,10 +24,8 @@ def parse(annot,forannotName,name):
         else:
             name+=k.__str__()
             forannotName+=k.__str__()
-
         name+="-"
         forannotName+="-"
-
         for i in range(6):
             forAnnot = forannotName
             nameImg = name
@@ -59,10 +55,8 @@ def parse(annot,forannotName,name):
                         yrect = float(mass[3])*480
                     if count==23:
                        h= float(mass[3])*480
-
                     if count==28:
                        w = float(mass[2])*640 - xrect;
-
                     if count==61:
                        h= 4* (h-float(mass[3])*480)
                        yrect = yrect - h*0.6

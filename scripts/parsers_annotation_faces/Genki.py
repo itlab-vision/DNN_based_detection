@@ -4,14 +4,13 @@ format
 0 or 1 - smile
 fileAnnot = open ("D:/my-study/OpenCV/DataSet/GENKI-R2009a/Subsets/GENKI-SZSL/GENKI-SZSL_labels.txt")
 fileNameImag= open ("D:/my-study/OpenCV/DataSet/GENKI-R2009a/Subsets/GENKI-SZSL/GENKI-SZSL_Images.txt")
-
 annot = open("D:/my-study/OpenCV/DataSet/GENKI-R2009a/Subsets/GENKI-SZSL/annot.txt",'w')
-
 name="D:/my-study/OpenCV/DataSet/GENKI-R2009a/files/"
 """
 
-def parse(fileAnnot,fileNameImag,annot,name):
+import sys
 
+def parse(fileAnnot,fileNameImag,annot,name):
     for line in fileAnnot:
         nameImg = name + fileNameImag.readline()
         nameImg = nameImg[0:nameImg.__len__()-1]
@@ -21,7 +20,6 @@ def parse(fileAnnot,fileNameImag,annot,name):
         h = float(line[2])*1.25
         w = float(line[2])*1.15
         annot.writelines(nameImg + " " + "1 " + x.__str__()+" "+y.__str__()+ " "+w.__str__()+" "+h.__str__() )
-
     annot.close()
 
 if __name__== "__main__":

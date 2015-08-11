@@ -1,5 +1,4 @@
 
-
 """
 0 - name
 1 - x left eyes
@@ -14,13 +13,10 @@
 10 - y center mouth
 11 - x right corner mouth
 12 - y right corner mouth
-
-
 file = open("D:/my-study/OpenCV/DataSet/CMU/annotTest.txt")
-
 annotFile = open("D:/my-study/OpenCV/DataSet/CMU/annotRect.txt",'w')
 """
-
+import sys
 def parse(file,annotFile):
     for line in file:
         massLine = line.split()

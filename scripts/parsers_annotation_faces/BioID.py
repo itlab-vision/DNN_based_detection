@@ -25,15 +25,13 @@ The markup scheme is as follows:
 19 = tip of chin
 
 annot=open("D:/my-study/OpenCV/DataSet/DataSet_for_train_Faces_Detector/PositiveImage/annotation.txt",'a')
-
 name = "D:/my-study/OpenCV/DataSet/BioID/points_20/bioid_"
-
 NameImage = "DataSet_for_train_Faces_Detector/PositiveImage/BioID/BioID_"
 
 """
 
-
 import sys
+
 def parse(annot,name,NameImage):
     for i in range(1521):
         if i<10:
@@ -48,7 +46,6 @@ def parse(annot,name,NameImage):
         if i>=1000:
             name+=i.__str__()
             NameImage+= i.__str__()
-
         name+=".pts"
         NameImage+=".jpg"
         file = open (name)
@@ -71,26 +68,22 @@ def parse(annot,name,NameImage):
                 if count==16: #right temple
                     if i==50:
                         print("right temple "+line)
-
                     w= float(mass[0]) - w + 10
                 if count==20: #mouth
                     h=float(mass[1])
                     if i==50:
                         print("mouth  "+line)
-
                 if count== 22: #chip
                     if i==50:
                         print("chip "+line)
                     h = ( float(mass[1]) - h)*2.5
                     yrec = yrec - h*0.25
-
                     if (h+yrec>286):
                         yrec = 286 - h
             count+=1
         file.close()
        # print(xrect.__str__() + " " + yrec.__str__() + " "+ w.__str__() + " "+h.__str__()+" ")
         annot.writelines(NameImage + " 1 "+xrect.__str__() + " " + abs(yrec).__str__() + " "+ w.__str__() + " "+h.__str__() )
-
     annot.close()
 
 if __name__== "__main__":

@@ -6,11 +6,10 @@ file = open("D:/my-study/OpenCV/DataSet/CIE_Biomatrics/annot/L001/00011001.yml")
 name = "D:/my-study/OpenCV/DataSet/CIE_Biomatrics/annot/"
 nameImage = "DataSet_for_train_Faces_Detector/PositiveImage/CIE_Biomatrics/"
 '''
-
+import sys
 
 def parse(name,nameImage,annot,file):
     for i in range(100):
-
         i+=1
         if i<10:
             name+="L00" + i.__str__() + "/"
@@ -33,13 +32,11 @@ def parse(name,nameImage,annot,file):
                 flagX=0
                 flagY=0
                 listPoint = []
-
                 for ymlLine in ymlFile:
                     ymlLine = ymlLine.split()
                     if ymlLine.__len__()>1:
                         listPoint.append(float(ymlLine[1]))
                 ymlFile.close()
-
                 if listPoint[30]!=0.0 and listPoint[26]!=0.0:
                     w = (listPoint[30] - listPoint[26])*4.5
                 if listPoint[42]!=0.0 and listPoint[40]!=0.0:
@@ -56,8 +53,6 @@ def parse(name,nameImage,annot,file):
                     w = (listPoint[18] - listPoint[10])*4.5
                 if listPoint[2]!=0.0 and listPoint[0]!=0.0:
                     w = (listPoint[2] - listPoint[0])*3
-
-
                 if listPoint[45]!=0.0 and listPoint[5]!=0.0:
                     h = (listPoint[45] - listPoint[5])*7
                 if listPoint[51]!=0.0 and listPoint[5]!=0.0:
@@ -76,9 +71,6 @@ def parse(name,nameImage,annot,file):
                     h = (listPoint[5] - listPoint[3])*2.5
                 if listPoint[5]!=0.0 and listPoint[7]!=0.0:
                     h = (listPoint[7] - listPoint[5])*2.5
-
-
-
                 if listPoint[53]!=0.0:
                     x = listPoint[53] - 5
                 if listPoint[27]!=0.0:
@@ -95,8 +87,6 @@ def parse(name,nameImage,annot,file):
                     x = listPoint[5] - w*0.4
                 if listPoint[0]!=0.0:
                     x = listPoint[0] - w*0.3
-
-
                 if listPoint[25]!=0.0:
                     y = listPoint[25] - h*0.1
                 if listPoint[53]!=0.0:
@@ -119,7 +109,6 @@ def parse(name,nameImage,annot,file):
                     y = listPoint[5] - h*0.4
                 if listPoint[1]!=0.0:
                     y = listPoint[1] - h*0.3
-
                 """
                 if listPoint[7]==0.0:
                     if listPoint[5]!=0.0 and listPoint[12]!=0.0:
@@ -157,16 +146,12 @@ def parse(name,nameImage,annot,file):
                     x = listPoint[0]  - w*0.3
                 """
                 annot.writelines(" 1 "+ x.__str__() + " " + y.__str__() + " " + w.__str__() + " "+ h.__str__() )
-
-
             else:
                 line = line.split()
                 if line.__len__()>3:
                     if line[3]=="allNameFile.txt":
                         break
-
             count+=1
-
     annot.close()
 
 
