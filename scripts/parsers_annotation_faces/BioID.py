@@ -89,7 +89,7 @@ def parse(annot,name,NameImage):
             count+=1
         file.close()
        # print(xrect.__str__() + " " + yrec.__str__() + " "+ w.__str__() + " "+h.__str__()+" ")
-        annot.write(NameImage + " 1 "+xrect.__str__() + " " + abs(yrec).__str__() + " "+ w.__str__() + " "+h.__str__()+"\n" )
+        annot.writelines(NameImage + " 1 "+xrect.__str__() + " " + abs(yrec).__str__() + " "+ w.__str__() + " "+h.__str__() )
 
     annot.close()
 

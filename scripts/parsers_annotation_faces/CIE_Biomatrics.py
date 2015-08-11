@@ -156,7 +156,7 @@ def parse(name,nameImage,annot,file):
                     w = (listPoint[2] - listPoint[0]) * 2
                     x = listPoint[0]  - w*0.3
                 """
-                annot.write(" 1 "+ x.__str__() + " " + y.__str__() + " " + w.__str__() + " "+ h.__str__() + "\n")
+                annot.writelines(" 1 "+ x.__str__() + " " + y.__str__() + " " + w.__str__() + " "+ h.__str__() )
 
 
             else:

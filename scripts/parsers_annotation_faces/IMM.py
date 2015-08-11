@@ -68,7 +68,7 @@ def parse(annot,forannotName,name):
                        yrect = yrect - h*0.6
                 count+=1
             file.close()
-            annot.write(forAnnot + " 1" + " "+xrect.__str__()  +" " + yrect.__str__() + " "+ w.__str__() + " " + h.__str__()+"\n" )
+            annot.writelines(forAnnot + " 1" + " "+xrect.__str__()  +" " + yrect.__str__() + " "+ w.__str__() + " " + h.__str__() )
         #print(xrect.__str__()  +" " + yrect.__str__() + " "+ w.__str__() + " " + h.__str__())
     annot.close()
 

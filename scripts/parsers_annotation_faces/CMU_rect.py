@@ -30,7 +30,7 @@ def parse(file,annotFile):
         x = float(massLine[1]) - 1.5 * (w/5)
         y = float(massLine[2]) - h*0.4
         print(massLine[0] + " 1" + " " + x.__str__() + " "+ y.__str__() + " "+ w.__str__() + " " + h.__str__())
-        annotFile.writelines("1" + " " + x.__str__() + " "+ y.__str__() + " "+ w.__str__() + " " + h.__str__() + "\n")
+        annotFile.writelines("1" + " " + x.__str__() + " "+ y.__str__() + " "+ w.__str__() + " " + h.__str__() )
         print(massLine)
     annotFile.close()
 

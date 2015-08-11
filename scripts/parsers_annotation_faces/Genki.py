@@ -20,7 +20,7 @@ def parse(fileAnnot,fileNameImag,annot,name):
         y = float(line[1]) - float(line[2])*0.55
         h = float(line[2])*1.25
         w = float(line[2])*1.15
-        annot.write(nameImg + " " + "1 " + x.__str__()+" "+y.__str__()+ " "+w.__str__()+" "+h.__str__()+"\n" )
+        annot.writelines(nameImg + " " + "1 " + x.__str__()+" "+y.__str__()+ " "+w.__str__()+" "+h.__str__() )
 
     annot.close()
 

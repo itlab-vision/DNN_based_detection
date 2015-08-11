@@ -43,7 +43,7 @@ def parse(file,annot,_path):
             w = maxX - minX  + 10
             x = minX - 5
             y = minY - h*0.2
-            annot.write(name + " " + "1 " + x.__str__()  + " " + y.__str__() + " " + w.__str__() + " " + h.__str__() + "\n")
+            annot.writelines(name + " " + "1 " + x.__str__()  + " " + y.__str__() + " " + w.__str__() + " " + h.__str__())
         c+=1
 
     annot.close()

@@ -86,7 +86,7 @@ def parse(annot,_path_annot,_path_write):
         h = maxY - minY
         file.close()
         annot.write(_path_write + str(i) + "a.jpg " + str(1) + " "+ str(x) + " " + str(y) + " " +
-                    str(w) + " " + str(h + h*0.1) + " \n")
+                    str(w) + " " + str(h + h*0.1) )
 
     for i in range(200):
         i+=1
@@ -115,8 +115,8 @@ def parse(annot,_path_annot,_path_write):
         w = maxX - minX
         h = maxY - minY
         file.close()
-        annot.write(_path_write + str(1) + "b.jpg " + str(1) + " "+ str(x) + " " + str(y) + " " +
-                    str(w) + " " + str(h + h*0.1) + " \n")
+        annot.writelines(_path_write + str(1) + "b.jpg " + str(1) + " "+ str(x) + " " + str(y) + " " +
+                    str(w) + " " + str(h + h*0.1) )
     annot.close()
 
 
