@@ -1,4 +1,4 @@
-#include <FacesClassifier.hpp>
+#include <lua_classifier.hpp>
 
 #include <iostream>
 
@@ -97,15 +97,15 @@ Result FacesClassifier::Classify(Mat& img)
 
 #else
 
-FacesClassifier::FacesClassifier()
+LuaClassifier::LuaClassifier()
 {}
 
-Classifier::Result FacesClassifier::Classify(Mat& /*img*/)
+Classifier::Result LuaClassifier::Classify(Mat& /*img*/)
 {
     return Result();
 }
 
-FacesClassifier::~FacesClassifier()
+LuaClassifier::~LuaClassifier()
 {}
 
 #endif

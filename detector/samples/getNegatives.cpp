@@ -18,7 +18,7 @@ int main(int argc, char **argv)
 #include <opencv2/imgproc/imgproc.hpp>
 
 #include "Detector.hpp"
-#include "FacesClassifier.hpp"
+#include "lua_classifier.hpp"
 
 #include "rapidXml/rapidxml.hpp"
 

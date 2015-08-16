@@ -9,7 +9,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 
 #include "Detector.hpp"
-#include "FacesClassifier.hpp"
+#include "lua_classifier.hpp"
 
 #include <stdio.h>
 #define TIMER_START(name) int64 t_##name = getTickCount()
@@ -49,7 +49,7 @@ int main(int argc, char** argv)
         return 1;
     }
     
-    Ptr<Classifier> classifier = Ptr<Classifier>(new FacesClassifier());
+    Ptr<Classifier> classifier = Ptr<Classifier>(new LuaClassifier());
     if (mode.compare("-i") == 0)
     {
         string resultFilename = "result.txt";
@@ -188,7 +188,7 @@ void detectListImages(vector<string> &filenames, Ptr<Classifier> classifier, int
     for (uint i = 0; i < filenames.size(); i++)
     {
         Detector detector;
-        Ptr<Classifier> classifier1 = Ptr<Classifier>(new FacesClassifier());
+        Ptr<Classifier> classifier1 = Ptr<Classifier>(new LuaClassifier());
         Mat img = imread(filenames[i], IMREAD_COLOR);
 
         cout << filenames[i] << " is now proccessed" << endl;

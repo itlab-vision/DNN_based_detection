@@ -7,7 +7,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 
 #include "Detector.hpp"
-#include "FacesClassifier.hpp"
+#include "lua_classifier.hpp"
 
 #include <omp.h>
 
@@ -67,7 +67,7 @@ int main(int argc, char **argv)
         vector<int> labels;
         vector<Rect> negatives;
 
-        Ptr<Classifier> classifier = Ptr<Classifier>(new FacesClassifier());
+        Ptr<Classifier> classifier = Ptr<Classifier>(new LuaClassifier());
         Detector detector;
         detector.Detect(img, labels, scores, rects, classifier, Size(32, 32), 1, 1, 1.2, 3, true);
 
