@@ -2,6 +2,8 @@
 
 #include <memory>
 
+using cv::FileNode;
+using cv::FileStorage;
 using cv::Mat;
 using std::shared_ptr;
 using std::string;
@@ -23,20 +25,20 @@ struct CaffeClassifier::Impl {
     vector<Result> GetPrediction(const shared_ptr<Blobf> blob);
     void Load();
     void SetParams(const string& params_string);
-    void SetParams(const cv::FileNode& params_file_node);
+    void SetParams(const FileNode& params_file_node);
 
-    std::shared_ptr<caffe::Net<float> > net;
-    std::shared_ptr<Blobf> data_blob;
-    std::shared_ptr<Blobf> softmax_blob;
+    shared_ptr<caffe::Net<float> > net;
+    shared_ptr<Blobf> data_blob;
+    shared_ptr<Blobf> softmax_blob;
 
     // Computing device to use. Negative values stand for CPU,
     // positives reference GPUs. To learn ID of a particular GPU
     // device_query (either from Caffe or CUDA samples) binary can be used.
     int device_id;
 
-    std::string net_description_file;
-    std::string net_binary_file;
-    std::string output_blob_name;
+    string net_description_file;
+    string net_binary_file;
+    string output_blob_name;
 };
 
 CaffeClassifier::Impl::Impl()
@@ -48,12 +50,12 @@ CaffeClassifier::Impl::Impl()
 
 void CaffeClassifier::Impl::SetParams(const string& params_string)
 {
-    cv::FileStorage fs(params_string,
-                       cv::FileStorage::READ + cv::FileStorage::MEMORY);
+    FileStorage fs(params_string,
+                   FileStorage::READ + FileStorage::MEMORY);
     SetParams(fs.root());
 }
 
-void CaffeClassifier::Impl::SetParams(const cv::FileNode& params_file_node)
+void CaffeClassifier::Impl::SetParams(const FileNode& params_file_node)
 {
     CV_Assert(!params_file_node.isNone());
     params_file_node["device_id"] >> device_id;
@@ -123,7 +125,7 @@ void CaffeClassifier::Impl::FillBlob(const vector<Mat>& images,
     }
 }
 
-vector<CaffeClassifier::Result> CaffeClassifier::Impl::GetPrediction(const std::shared_ptr<Blobf> blob)
+vector<CaffeClassifier::Result> CaffeClassifier::Impl::GetPrediction(const shared_ptr<Blobf> blob)
 {
     // Check that its a binary classifier,
     // i.e. output softmax blob has 2 channels.
@@ -149,7 +151,7 @@ void CaffeClassifier::SetParams(const string& params_string)
     impl->SetParams(params_string);
 }
 
-void CaffeClassifier::SetParams(const cv::FileNode& params_file_node)
+void CaffeClassifier::SetParams(const FileNode& params_file_node)
 {
     impl->SetParams(params_file_node);
 }
@@ -205,7 +207,7 @@ void CaffeClassifier::SetParams(const string& /*params_string*/)
     NotImplemented();
 }
 
-void CaffeClassifier::SetParams(const cv::FileNode& /*params_file_node*/)
+void CaffeClassifier::SetParams(const FileNode& /*params_file_node*/)
 {
     NotImplemented();
 }
@@ -215,7 +217,7 @@ void CaffeClassifier::Init()
     NotImplemented();
 }
 
-CaffeClassifier::Result CaffeClassifier::Classify(cv::Mat& /*image*/)
+CaffeClassifier::Result CaffeClassifier::Classify(Mat& /*image*/)
 {
     NotImplemented();
     return Result();
