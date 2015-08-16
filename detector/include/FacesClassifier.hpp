@@ -1,19 +1,11 @@
 #include "Classifier.hpp"
 
-extern "C" {
-	#include "lua.hpp"
-	#include "luaT.h"
-	#include "TH/TH.h"
-}
-
 class FacesClassifier : public Classifier {
 public:
-    FacesClassifier();
+	FacesClassifier();
+    virtual void SetParams(const std::string& params_string) {}
+    virtual void SetParams(const cv::FileNode& params_file_node) {}
+    virtual void Init(const std::string& file) {}
     virtual Result Classify(cv::Mat& img);
     virtual ~FacesClassifier();
-
-private:
-    void reportLuaErrors(lua_State *L, int status);
-
-    lua_State *L;
 };

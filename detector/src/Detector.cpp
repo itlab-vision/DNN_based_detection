@@ -65,7 +65,7 @@ void Detector::Detect(const Mat &img, vector<int> &labels, vector<double> &score
                 Rect rect(x, y, windowSize.width, windowSize.height);
                 Mat window = layer(rect);
 
-                Result result = classifier->Classify(window);
+                Classifier::Result result = classifier->Classify(window);
                 if (fabs(result.confidence) < DETECTOR_THRESHOLD && result.label == 1)
                 {
                     labels.push_back(result.label);

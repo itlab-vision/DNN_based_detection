@@ -11,7 +11,7 @@ using std::vector;
 
 // All Caffe specific classes are hided to the source file,
 // making Caffe dependency optional rather that obligatory.
-struct Impl {
+struct CaffeClassifier::Impl {
     typedef CaffeClassifier::Blobf Blobf;
     typedef CaffeClassifier::Result Result;
 
@@ -25,7 +25,7 @@ struct Impl {
     void SetParams(const string& params_string);
     void SetParams(const cv::FileNode& params_file_node);
 
-    caffe::Net net;
+    std::shared_ptr<caffe::Net<float> > net;
     std::shared_ptr<Blobf> data_blob;
     std::shared_ptr<Blobf> softmax_blob;
 
@@ -72,32 +72,33 @@ void CaffeClassifier::Impl::Load()
         Caffe::set_mode(Caffe::GPU);
         Caffe::SetDevice(device_id);
     }
-    Caffe::set_phase(Caffe::TEST);
     // Load net decription from a prototxt file.
-    caffe::Net<float> net(net_description_file);
+    net.reset(new caffe::Net<float>(net_description_file, caffe::TEST));
     // Load pre-trained net (binary proto).
-    net.CopyTrainedLayersFrom(net_binary_file);
+    net->CopyTrainedLayersFrom(net_binary_file);
 
     // Get input blob.
-    auto input_blobs = net.input_blobs();
+    auto input_blobs = net->input_blobs();
     CV_Assert(input_blobs.size() == 1);
     data_blob.reset(input_blobs[0]);
 
     // Get output blob.
-    softmax_blob.reset(net.blob_by_name(output_blob_name));
+    softmax_blob.reset(net->blob_by_name(output_blob_name).get());
 }
 
 void CaffeClassifier::Impl::FillBlob(const Mat& image,
                                      const shared_ptr<caffe::Blob<float> > blob)
 {
-    FillBlob({image}, blob);
+    vector<Mat> images;
+    images.push_back(image);
+    FillBlob(images, blob);
 }
 
 void CaffeClassifier::Impl::FillBlob(const vector<Mat>& images,
                                      const shared_ptr<caffe::Blob<float> > blob)
 {
     // Check that net is configured to use a proper batch size.
-    CV_Assert(input_blob->shape(0) == images.size());
+    CV_Assert(static_cast<size_t>(data_blob->shape(0)) == images.size());
     float* blob_data = blob->mutable_cpu_data();
     for (size_t i = 0; i < images.size(); ++i)
     {
@@ -113,21 +114,21 @@ void CaffeClassifier::Impl::FillBlob(const vector<Mat>& images,
         }
 
         vector<Mat> image_channels;
-        for (size_t j = 0; j < image.channels(); ++j)
+        for (int j = 0; j < image.channels(); ++j)
         {
             image_channels.push_back(Mat(image.size(), CV_32F,
                                          blob_data + blob->offset(i, j)));
         }
-        cv::split(image_float, &image_channels);
+        cv::split(image_float, image_channels);
     }
 }
 
-vector<Result> CaffeClassifier::Impl::GetPrediction(const std::shared_ptr<Blobf> blob)
+vector<CaffeClassifier::Result> CaffeClassifier::Impl::GetPrediction(const std::shared_ptr<Blobf> blob)
 {
     // Check that its a binary classifier,
     // i.e. output softmax blob has 2 channels.
     CV_Assert(blob->shape(1) == 2);
-    float* softmax_scores_data = blob->cpu_data();
+    const float* softmax_scores_data = blob->cpu_data();
     vector<Result> results(blob->shape(0));
     for (size_t i = 0; i < results.size(); ++i)
     {
@@ -140,47 +141,51 @@ vector<Result> CaffeClassifier::Impl::GetPrediction(const std::shared_ptr<Blobf>
 }
 
 CaffeClassifier::CaffeClassifier()
-    : impl()
+    : impl(new Impl)
 {}
 
 void CaffeClassifier::SetParams(const string& params_string)
 {
-    impl.SetParams(params_string);
+    impl->SetParams(params_string);
 }
 
 void CaffeClassifier::SetParams(const cv::FileNode& params_file_node)
 {
-    impl.SetParams(params_file_node);
+    impl->SetParams(params_file_node);
 }
 
-void CaffeClassifier::Load()
+void CaffeClassifier::Init()
 {
-    impl.Load();
+    impl->Load();
 }
 
-Result CaffeClassifier::Classify(Mat& image)
+CaffeClassifier::Result CaffeClassifier::Classify(Mat& image)
 {
     // Write image to the input blob of the net.
-    impl.FillBlob(image, impl.data_blob);
+    impl->FillBlob(image, impl->data_blob);
     // Pass data through the net.
-    impl.net.ForwardPrefilled();
+    impl->net->ForwardPrefilled();
     // Get classification result.
-    return impl.GetPrediction(impl.softmax_blob)[0];
+    return impl->GetPrediction(impl->softmax_blob)[0];
 }
 
-vector<Result> CaffeClassifier::Classify(vector<Mat>& images)
+vector<CaffeClassifier::Result> CaffeClassifier::Classify(const vector<Mat>& images)
 {
-    impl.FillBlob(images, impl.data_blob);
+    impl->FillBlob(images, impl->data_blob);
     // Pass data through the net.
-    impl.net.ForwardPrefilled();
+    impl->net->ForwardPrefilled();
     // Get classification result.
-    return impl.GetPrediction(impl.softmax_blob);
+    return impl->GetPrediction(impl->softmax_blob);
 }
 
 CaffeClassifier::~CaffeClassifier()
 {}
 
 #else
+
+struct Impl
+{
+};
 
 namespace
 {
@@ -205,18 +210,18 @@ void CaffeClassifier::SetParams(const cv::FileNode& /*params_file_node*/)
     NotImplemented();
 }
 
-void CaffeClassifier::Load()
+void CaffeClassifier::Init()
 {
     NotImplemented();
 }
 
-Result CaffeClassifier::Classify(cv::Mat& /*image*/)
+CaffeClassifier::Result CaffeClassifier::Classify(cv::Mat& /*image*/)
 {
     NotImplemented();
     return Result();
 }
 
-vector<Result> CaffeClassifier::Classify(const vector<Mat>& images)
+vector<CaffeClassifier::Result> CaffeClassifier::Classify(const vector<Mat>& images)
 {
     NotImplemented();
     return {Result()};

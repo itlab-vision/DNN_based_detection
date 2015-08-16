@@ -1,3 +1,14 @@
+// RapidXML dependency should not be obligatory,
+// or this sample should be exlcuded from the build list if it's not present.
+#include <iostream>
+
+int main(int argc, char **argv)
+{
+    std::cerr << "Not implemented." << std::endl;
+}
+
+#if 0
+
 #include <iostream>
 #include <cstdlib>
 #include <fstream>
@@ -228,3 +239,5 @@ int readArguments(int argc, char **argv, string &annotsFilename)
     }
     return 0;
 }
+
+#endif

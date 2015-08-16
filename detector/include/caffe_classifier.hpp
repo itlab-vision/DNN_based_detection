@@ -20,14 +20,14 @@ public:
     CaffeClassifier();
     virtual void SetParams(const std::string& params_string);
     virtual void SetParams(const cv::FileNode& params_file_node);
-    virtual void Load();
+    virtual void Init();
     virtual Result Classify(cv::Mat& image);
     virtual std::vector<Result> Classify(const std::vector<cv::Mat>& images);
     virtual ~CaffeClassifier();
 
 private:
     struct Impl;
-    Impl impl;
+    std::shared_ptr<Impl> impl;
 };
 
 #endif

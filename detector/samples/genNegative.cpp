@@ -39,7 +39,6 @@ int main(int argc, char **argv)
         string filename;
         
         Rect face;
-        int headpose, numFacialFeatures;
         in >> filename;
         if (filename.empty())
         {

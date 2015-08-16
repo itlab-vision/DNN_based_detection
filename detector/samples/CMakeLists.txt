@@ -7,7 +7,7 @@ foreach(sample_filename ${samples_list})
 
   # add and configure executable file to be produced 
   add_executable(${sample} ${sample_filename})
-  target_link_libraries(${sample} ${FACEDETECTOR_LIBRARY})
+  target_link_libraries(${sample} ${PROJECT_NAME} ${OpenCV_LIBS})
   set_target_properties(${sample} PROPERTIES
     OUTPUT_NAME "${sample}"
     PROJECT_LABEL "${sample}"
