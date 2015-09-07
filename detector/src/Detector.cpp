@@ -69,7 +69,6 @@ void Detector::Detect(const Mat &img, vector<int> &labels,
 
                 Classifier::Result result = classifier->Classify(window);
                 if (fabs(result.confidence) < DETECTOR_THRESHOLD && result.label == 1) {
-                    printf("I'm here! ~~~~~~~~~~~~~~~~~~~~~~~~~~~WOW~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
                     labels.push_back(result.label);
                     scores.push_back(result.confidence);
 
