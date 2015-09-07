@@ -19,17 +19,17 @@ struct CaffeClassifier::Impl {
 
     Impl();
     void FillBlob(const Mat& image,
-                  const shared_ptr<Blobf> blob);
+                  const Blobf* blob);
     void FillBlob(const vector<Mat>& images,
-                  const shared_ptr<Blobf> blob);
-    vector<Result> GetPrediction(const shared_ptr<Blobf> blob);
+                  const Blobf* blob);
+    vector<Result> GetPrediction(const Blobf* blob);
     void Load();
     void SetParams(const string& params_string);
     void SetParams(const FileNode& params_file_node);
 
     shared_ptr<caffe::Net<float> > net;
-    shared_ptr<Blobf> data_blob;
-    shared_ptr<Blobf> softmax_blob;
+    Blobf* data_blob;
+    Blobf* softmax_blob;
 
     // Computing device to use. Negative values stand for CPU,
     // positives reference GPUs. To learn ID of a particular GPU
@@ -82,14 +82,14 @@ void CaffeClassifier::Impl::Load()
     // Get input blob.
     auto input_blobs = net->input_blobs();
     CV_Assert(input_blobs.size() == 1);
-    data_blob.reset(input_blobs[0]);
+    data_blob = input_blobs[0];
 
     // Get output blob.
-    softmax_blob.reset(net->blob_by_name(output_blob_name).get());
+    softmax_blob = net->blob_by_name(output_blob_name).get();
 }
 
 void CaffeClassifier::Impl::FillBlob(const Mat& image,
-                                     const shared_ptr<caffe::Blob<float> > blob)
+                                     const Blobf* blob)
 {
     vector<Mat> images;
     images.push_back(image);
@@ -97,11 +97,11 @@ void CaffeClassifier::Impl::FillBlob(const Mat& image,
 }
 
 void CaffeClassifier::Impl::FillBlob(const vector<Mat>& images,
-                                     const shared_ptr<caffe::Blob<float> > blob)
+                                     const Blobf* blob)
 {
     // Check that net is configured to use a proper batch size.
     CV_Assert(static_cast<size_t>(data_blob->shape(0)) == images.size());
-    float* blob_data = blob->mutable_cpu_data();
+    float* blob_data = ((Blobf*)blob)->mutable_cpu_data();
     for (size_t i = 0; i < images.size(); ++i)
     {
         Mat image = images[i];
@@ -125,7 +125,7 @@ void CaffeClassifier::Impl::FillBlob(const vector<Mat>& images,
     }
 }
 
-vector<CaffeClassifier::Result> CaffeClassifier::Impl::GetPrediction(const shared_ptr<Blobf> blob)
+vector<CaffeClassifier::Result> CaffeClassifier::Impl::GetPrediction(const Blobf* blob)
 {
     // Check that its a binary classifier,
     // i.e. output softmax blob has 2 channels.
