@@ -1,7 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
+#include <iostream>
 #include <fstream>
 #include <string>
 
@@ -11,88 +8,58 @@
 #include "Detector.hpp"
 #include "caffe_classifier.hpp"
 
-using std::vector;
-using std::ifstream;
-using std::ofstream;
-using std::string;
-using std::shared_ptr;
+using namespace std;
 using cv::Rect;
 using cv::Mat;
 using cv::Size;
+using cv::FileNode;
+using cv::FileStorage;
 
 struct Args {
-    char* input;
-    char* output;
-    int step;
-    int min_neighbs;
-    float scale;
-    int group_rect;
-    vector<char*> filenames;
-    string net_config;
+    string input_path;
+    FileNode params_file_node;
+    vector<string> filenames;
 };
 
-bool parse_args(int argc, char** argv, Args& args);
-void detect(Classifier* classifier, Args args, FILE* out);
-
-const char* help = "detector -i \"input/folder\" -o \"output/folder\"\
-[--step (int), --min_neighbs (int), --scale (float), \
---group_rect (int 0 or 1)]\n\
+const char* help = "detector \"input/folder\"\n\
     input folder must contain two files:\n\
     annotation.txt - contains filenames of imgs to detect\n\
-    net_config.yml - contains description of this type:\n\
-        device_id - <0 cpu >=0 gpu\n\
+    config.yml - contains description of classifier:\n\
+        step (int)\n\
+        min_neighbs (int)\n\
+        scale (float)\n\
+        group_rect (int 0 or 1)\n\
+        device_id - <0 cpu, >=0 gpu\n\
         net_description_file\n\
         net_binary_file\n\
+    output of the program is file result.txt in input folder\n\
         \n";
 
-bool parse_args(int argc, char **argv, Args& args) {
-    if (argc < 3) {
-        printf("Too few arguments\n");
-        printf("%s", help);
-        return false;
-    } else {
-        for (int i = 1; i < argc; i++) {
-            if (strcmp(argv[i], "-i") == 0) {
-                args.input = argv[++i];
-            } else if (strcmp(argv[i], "-o") == 0) {
-                args.output = argv[++i];
-            } else if (strcmp(argv[i], "--step") == 0) {
-                args.step = atoi(argv[++i]);
-            } else if (strcmp(argv[i], "--min_neighbs") == 0) {
-                args.min_neighbs = atoi(argv[++i]);
-            } else if (strcmp(argv[i], "--scale") == 0) {
-                args.scale = atof(argv[++i]);
-            } else if (strcmp(argv[i], "--group_rect") == 0) {
-                args.group_rect = atoi(argv[++i]);
-            } else {
-                printf("Unrecognized param\n");
-                printf("%s", help);
-                return false;
-            }
-        }
-    }
-    return true;
-}
-
-void detect(shared_ptr<Classifier> classifier, Args args, FILE* out) {
+void detect(shared_ptr<Classifier> classifier, Args args, ofstream &out) {
     vector<int> labels;
     vector<Rect> rects;
     vector<double> scores;
 
+    FileNode params = args.params_file_node;
+    int step = params["step"];
+    float scale = params["scale"];
+    int min_neighbs = params["min_neighbs"];
+    int group_rect = params["group_rect"];
+
     Detector detector(classifier, Size(227, 227),
-                      args.step, args.step, args.scale,
-                      args.min_neighbs, args.group_rect);
+                      step, step, scale, min_neighbs, group_rect);
 
     for (size_t i = 0; i < args.filenames.size(); i++) {
         Mat img = imread(args.filenames[i], cv::IMREAD_COLOR);
-        printf("Processing %s", args.filenames[i]);
+        cout << "Processing " << args.filenames[i] << endl;
 
         detector.Detect(img, labels, scores, rects);
 
-        fprintf(out, "%s%lu\n\n", args.filenames[i], rects.size());
+        out << args.filenames[i] << endl << rects.size() << endl;
         for (size_t j = 0; j < rects.size(); j++) {
-            fprintf(out, "%u %u %u %u %lf", rects[j].x, rects[j].y,
-                rects[j].width, rects[j].height, scores[j]);
+            out << rects[j].x << " " << rects[j].y << " "
+                << rects[j].width << " " << rects[j].height << " "
+                << scores[j] << " " << endl;
         }
         labels.clear();
         scores.clear();
@@ -101,55 +68,46 @@ void detect(shared_ptr<Classifier> classifier, Args args, FILE* out) {
 }
 
 int main(int argc, char** argv) {
+    if (argc < 2) {
+        cout << "Too few arguments\n" << help;
+        return 1;
+    }
+
     Args args;
-    args.step = 1;
-    args.min_neighbs = 3;
-    args.scale = 1.2f;
-    args.group_rect = 0;
+    args.input_path = string(argv[1]);
 
-    if (!parse_args(argc, argv, args)) {
+    string annot = args.input_path + "/annotation.txt";
+    string config = args.input_path + "/config.yml";
+
+    ifstream content_annot(annot);
+    FileStorage fs(config, FileStorage::READ);
+
+    if (!content_annot.is_open() || !fs.isOpened()) {
+        cout << "Cannot find or open input files\n";
+        cout << help;
         return 1;
     }
 
-    FILE *ant = NULL, *net = NULL;
-    char *tmp = new char[strlen(args.input) + 1 + 15];
-    strcpy(tmp, args.input);
-    ant = fopen(strcat(tmp, "/annotation.txt"), "r");
-    strcpy(tmp, args.input);
-    net = fopen(strcat(tmp, "/net_config.yml"), "r");
-    if (ant == NULL || net == NULL) {
-        printf("Cannot find or open input files\n");
-        printf("%s", help);
-        return 1;
+    std::string s;
+    while (std::getline(content_annot, s)) {
+        args.filenames.push_back(s);
     }
 
-    char* line = NULL;
-    size_t len = 0;
-    ssize_t read;
-    while ((read = getline(&line, &len, ant)) != -1) {
-        char *new_line = new char[strlen(line) + 1];
-        strcpy(new_line, line);
-        args.filenames.push_back(new_line);
-    }
-    while ((read = getline(&line, &len, net)) != -1) {
-       args.net_config += line;
-    }
+    args.params_file_node = fs.root();
 
     shared_ptr<Classifier> classifier(new CaffeClassifier());
-    classifier->SetParams(args.net_config);
+    classifier->SetParams(args.params_file_node);
     classifier->Init();
 
-    FILE* out;
-    out = fopen(strcat(args.output, "/result.txt"), "w");
-    if (out == NULL) {
-        printf("Problems with creating output file\n");
-        printf("%s", help);
+    ofstream out(args.input_path + "/result.txt");
+    if (!out.is_open()) {
+        cout << "Problems with creating output file\n";
+        cout << help;
         return 1;
     }
 
     detect(classifier, args, out);
 
-    printf("sdfgdsgsdg\n");
-    fclose(out);
+    out.close();
     return 0;
 }

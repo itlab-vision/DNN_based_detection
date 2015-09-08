@@ -19,9 +19,9 @@ struct CaffeClassifier::Impl {
 
     Impl();
     void FillBlob(const Mat& image,
-                  const Blobf* blob);
+                  Blobf* blob);
     void FillBlob(const vector<Mat>& images,
-                  const Blobf* blob);
+                  Blobf* blob);
     vector<Result> GetPrediction(const Blobf* blob);
     void Load();
     void SetParams(const string& params_string);
@@ -89,7 +89,7 @@ void CaffeClassifier::Impl::Load()
 }
 
 void CaffeClassifier::Impl::FillBlob(const Mat& image,
-                                     const Blobf* blob)
+                                     Blobf* blob)
 {
     vector<Mat> images;
     images.push_back(image);
@@ -97,11 +97,11 @@ void CaffeClassifier::Impl::FillBlob(const Mat& image,
 }
 
 void CaffeClassifier::Impl::FillBlob(const vector<Mat>& images,
-                                     const Blobf* blob)
+                                     Blobf* blob)
 {
     // Check that net is configured to use a proper batch size.
     CV_Assert(static_cast<size_t>(data_blob->shape(0)) == images.size());
-    float* blob_data = ((Blobf*)blob)->mutable_cpu_data();
+    float* blob_data = blob->mutable_cpu_data();
     for (size_t i = 0; i < images.size(); ++i)
     {
         Mat image = images[i];
