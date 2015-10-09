@@ -7,7 +7,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 
 #include "Detector.hpp"
-#include "FacesClassifier.hpp"
+#include "lua_classifier.hpp"
 
 #include <omp.h>
 
@@ -20,7 +20,7 @@ string pathToResultImages = "/home/artem/projects/itlab/negatives/neg_lfw/";
 int readArguments(int argc, char **argv, string &annotsFilename);
 void readAnnotationFile(const string &filename, string &imgFilename, vector<Rect> &objRect, vector<string> &objClass);
 
-//image_name face_bbox_x face_bbox_y face_bbox_width face_bbox_height headpose num_facial_features left_eye_left_x 
+//image_name face_bbox_x face_bbox_y face_bbox_width face_bbox_height headpose num_facial_features left_eye_left_x
 //left_eye_left_y left_eye_right_x left_eye_right_y mouth_left_x mouth_left_y mouth_right_x mouth_right_y outer_lower_lib_x outer_lower_lib_y outer_upper_lib_x outer_upper_lib_y right_eye_left_x right_eye_left_y right_eye_right_x right_eye_right_y nose_left_x nose_left_y nose_right_x nose_right_y
 
 int main(int argc, char **argv)
@@ -37,9 +37,8 @@ int main(int argc, char **argv)
 	while (!in.eof())
     {
         string filename;
-        
+
         Rect face;
-        int headpose, numFacialFeatures;
         in >> filename;
         if (filename.empty())
         {
@@ -58,6 +57,9 @@ int main(int argc, char **argv)
 
     cout << faces.size() << endl;
 
+    shared_ptr<Classifier> classifier(new LuaClassifier());
+    Detector detector(classifier, Size(32, 32), 1, 1, 1.2, 3, true);
+
     for (uint i = 1; i < annotsFilenames.size(); i++)
     {
         cout << pathToImages + annotsFilenames[i] << flush << endl;
@@ -68,9 +70,7 @@ int main(int argc, char **argv)
         vector<int> labels;
         vector<Rect> negatives;
 
-        Ptr<Classifier> classifier = Ptr<Classifier>(new FacesClassifier());
-        Detector detector;
-        detector.Detect(img, labels, scores, rects, classifier, Size(32, 32), 1, 1, 1.2, 3, true);
+        detector.Detect(img, labels, scores, rects);
 
         for (uint j = 0; j < rects.size(); j++)
         {

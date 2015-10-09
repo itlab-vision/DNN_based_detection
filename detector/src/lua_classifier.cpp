@@ -1,21 +1,41 @@
-#include "FacesClassifier.hpp"
+#include <lua_classifier.hpp>
+
 #include <iostream>
 
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
+#include "opencv2/highgui/highgui.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
 
 using namespace cv;
 using namespace std;
 
+#ifdef HAVE_LUA
+
+extern "C" {
+#include "lua.hpp"
+#include "luaT.h"
+#include "TH/TH.h"
+}
+
+namespace {
+    void FacesClassifier::reportLuaErrors(lua_State *L, int status)
+    {
+        if ( status!=0 )
+        {
+            cerr << "-- " << lua_tostring(L, -1) << endl;
+            lua_pop(L, 1);
+        }
+    }
+}
+
 FacesClassifier::FacesClassifier()
 {
-    L = lua_open();
+    lua_State * L = lua_open();
     luaL_openlibs(L);
 
     const char *filename = "/scripts/faces.lua";
     if (luaL_loadfile(L, filename) || lua_pcall(L, 0, 0, 0)) {
         cout << "Cannot run file " << filename
-            << "\nError:" << "lua_tostring(L, -1)\n";
+             << "\nError:" << "lua_tostring(L, -1)\n";
     }
     lua_getglobal(L, "load_modules");
     int s = lua_pcall(L, 0, 0, 0);
@@ -32,14 +52,7 @@ FacesClassifier::~FacesClassifier()
     lua_close(L);
 }
 
-void FacesClassifier::reportLuaErrors(lua_State *L, int status)
-{
-    if ( status!=0 )
-    {
-        cerr << "-- " << lua_tostring(L, -1) << endl;
-        lua_pop(L, 1);
-    }
-}
+
 
 Result FacesClassifier::Classify(Mat& img)
 {
@@ -51,9 +64,9 @@ Result FacesClassifier::Classify(Mat& img)
     float *tensorData = new float[len];
     for (uint k = 0; k < img.channels(); ++k)
     {
-        for (uint i = 0; i < img.rows; ++i) 
+        for (uint i = 0; i < img.rows; ++i)
         {
-            for (uint j = 0; j < img.cols; ++j) 
+            for (uint j = 0; j < img.cols; ++j)
             {
                 tensorData[k * countPixels + i * img.cols + j] = ((float)img.at<Vec3b>(i, j)[2-k]) / 255.0f;
             }
@@ -63,6 +76,7 @@ Result FacesClassifier::Classify(Mat& img)
     THFloatStorage *storage = THFloatStorage_newWithData(tensorData, len);
     THFloatTensor *tensor = THFloatTensor_newWithStorage1d(storage, 0, len, 1);
 
+    lua_State * L;
     lua_getglobal(L, "predict");
     luaT_pushudata(L, tensor, "torch.FloatTensor");
 
@@ -72,11 +86,26 @@ Result FacesClassifier::Classify(Mat& img)
     Result result;
     while (lua_gettop(L)) {
         result.confidence = lua_tonumber(L, -1);
-    	lua_pop(L, 1);
+        lua_pop(L, 1);
         result.label =  lua_tointeger(L, -1);
         lua_pop(L, 1);
     }
 
     delete[] tensorData;
-	return result;
+    return result;
 }
+
+#else
+
+LuaClassifier::LuaClassifier()
+{}
+
+Classifier::Result LuaClassifier::Classify(Mat& /*img*/)
+{
+    return Result();
+}
+
+LuaClassifier::~LuaClassifier()
+{}
+
+#endif

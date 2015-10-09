@@ -2,20 +2,34 @@
 #define _DETECTOR_HPP_
 
 #include "Classifier.hpp"
+
 #include <vector>
+#include <memory>
+
 #include <opencv2/core/core.hpp>
 
+
+// TODO: replace it as a class field
 const float DETECTOR_THRESHOLD = 0.5f;
 
 class Detector
 {
 public:
-    void Detect(const cv::Mat &img, std::vector<int> &labels, std::vector<double> &scores,
-    			std::vector<cv::Rect> &rects,  cv::Ptr<Classifier> classifier, 
-    			cv::Size windowSize = cv::Size(20, 20), int dx = 1, int dy = 1, double scale = 1.2,
-    			int minNeighbors = 3, bool groupRect = false);  
+    Detector(std::shared_ptr<Classifier> classifier, cv::Size window_size,
+             int dx, int dy, double scale,
+             int min_neighbours, bool group_rect);
+    void Detect(const cv::Mat &img, std::vector<int> &labels,
+                std::vector<double> &scores, std::vector<cv::Rect> &rects);
 private:
 	void Preprocessing(cv::Mat &img);
+
+    std::shared_ptr<Classifier> classifier;
+    cv::Size window_size;
+    int dx;
+    int dy;
+    double scale;
+    int min_neighbours;
+    bool group_rect;
 };
 
 #endif

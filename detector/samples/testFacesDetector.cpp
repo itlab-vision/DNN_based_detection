@@ -9,7 +9,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 
 #include "Detector.hpp"
-#include "FacesClassifier.hpp"
+#include "lua_classifier.hpp"
 
 #include <stdio.h>
 #define TIMER_START(name) int64 t_##name = getTickCount()
@@ -19,10 +19,10 @@
 using namespace std;
 using namespace cv;
 
-int readArguments(int argc, char **argv, vector<string> &filenames, string &resultDir, string &resultImgsDir, 
+int readArguments(int argc, char **argv, vector<string> &filenames, string &resultDir, string &resultImgsDir,
                   string &mode, int &step, double &scale, int &minNeighbours, bool &groupRect);
 
-void detectListImages(vector<string> &filenames, Ptr<Classifier> classifier, int step, double scale, int minNeighbours, 
+void detectListImages(vector<string> &filenames, Ptr<Classifier> classifier, int step, double scale, int minNeighbours,
                       bool groupRect, string &resultDir, string &resultImgsDir, string &resultFilename);
 
 void EllipseToRect(double majorRadius, double minorRadius, double angle, double x, double y, Rect &rect);
@@ -48,12 +48,12 @@ int main(int argc, char** argv)
         cout << helper << endl;
         return 1;
     }
-    
-    Ptr<Classifier> classifier = Ptr<Classifier>(new FacesClassifier());
+
+    Ptr<Classifier> classifier = Ptr<Classifier>(new LuaClassifier());
     if (mode.compare("-i") == 0)
     {
         string resultFilename = "result.txt";
-        detectListImages(filenames, classifier, step, scale, minNeighbours, 
+        detectListImages(filenames, classifier, step, scale, minNeighbours,
                          groupRect, resultDir, resultImgsDir, resultFilename);
     }
     else if (mode.compare("-f") == 0)
@@ -80,7 +80,7 @@ int main(int argc, char** argv)
             resultFilenameSS << filenames[i].substr(startPos, endPos - startPos) << "-out.txt";
             string resultFilename = resultFilenameSS.str();
 
-            detectListImages(imgFilenames, classifier, step, scale, minNeighbours, 
+            detectListImages(imgFilenames, classifier, step, scale, minNeighbours,
                              groupRect, resultDir, resultImgsDir, resultFilename);
         }
     }
@@ -107,7 +107,7 @@ int main(int argc, char** argv)
             filename << i << "-out.txt";
             filenamesResults.push_back(filename.str());
         }
-        
+
         for (uint i = 0; i < filenamesFolds.size(); i++)
         {
             vector<string> imgFilenames;
@@ -123,15 +123,15 @@ int main(int argc, char** argv)
                 imgFilenames.push_back(filenames[1] + filename + ".jpg");
             }
             in.close();
-            detectListImages(imgFilenames, classifier, step, scale, minNeighbours, 
+            detectListImages(imgFilenames, classifier, step, scale, minNeighbours,
                              groupRect, resultDir, resultImgsDir, filenamesResults[i]);
         }
-        
+
         /*
         int ProcNum, ProcRank;
         MPI_Init(&argc, &argv);
         MPI_Comm_size(MPI_COMM_WORLD, &ProcNum);
-        MPI_Comm_rank(MPI_COMM_WORLD, &ProcRank); 
+        MPI_Comm_rank(MPI_COMM_WORLD, &ProcRank);
 
         cout << ProcNum << " " << ProcRank << endl;
 
@@ -146,7 +146,7 @@ int main(int argc, char** argv)
         filenameResult.fill('0');
         filenameResult.width(2);
         filenameResult << i << "-out.txt";
-        
+
         vector<string> imgFilenames;
         ifstream in(filenameFold);
         while (!in.eof())
@@ -160,7 +160,7 @@ int main(int argc, char** argv)
             imgFilenames.push_back(filenames[1] + filename + ".jpg");
         }
         in.close();
-        detectListImages(imgFilenames, classifier, step, scale, minNeighbours, 
+        detectListImages(imgFilenames, classifier, step, scale, minNeighbours,
                          groupRect, resultDir, resultImgsDir, filenameResult);
 
         MPI_Finalize();
@@ -170,10 +170,10 @@ int main(int argc, char** argv)
 	return 0;
 }
 
-void detectListImages(vector<string> &filenames, Ptr<Classifier> classifier, int step, double scale, 
-                      int minNeighbours, bool groupRect, string &resultDir, string &resultImgsDir, 
+void detectListImages(vector<string> &filenames, Ptr<Classifier> classifier, int step, double scale,
+                      int minNeighbours, bool groupRect, string &resultDir, string &resultImgsDir,
                       string &resultFilename)
-{    
+{
     ofstream out;
     if (resultDir.compare("") != 0)
     {
@@ -184,16 +184,19 @@ void detectListImages(vector<string> &filenames, Ptr<Classifier> classifier, int
     vector<int> labels;
     vector<Rect> rects;
     vector<double> scores;
+
+    shared_ptr<Classifier> classifier1(new LuaClassifier());
+    Detector detector(classifier1, Size(32, 32), step, step,
+                      scale, minNeighbours, groupRect);
+
     #pragma omp parallel for //shared(countProccesedImgs)
     for (uint i = 0; i < filenames.size(); i++)
     {
-        Detector detector;
-        Ptr<Classifier> classifier1 = Ptr<Classifier>(new FacesClassifier());
         Mat img = imread(filenames[i], IMREAD_COLOR);
 
         cout << filenames[i] << " is now proccessed" << endl;
 
-        detector.Detect(img, labels, scores, rects, classifier1, Size(32, 32), step, step, scale, minNeighbours, groupRect);
+        detector.Detect(img, labels, scores, rects);
 
         if (out.is_open())
         {
@@ -227,7 +230,7 @@ void detectListImages(vector<string> &filenames, Ptr<Classifier> classifier, int
 }
 
 
-int readArguments(int argc, char **argv, vector<string> &filenames, string &resultDir, string &resultImgsDir, 
+int readArguments(int argc, char **argv, vector<string> &filenames, string &resultDir, string &resultImgsDir,
                   string &mode, int &step, double &scale, int &minNeighbours, bool &groupRect)
 {
     string curTypeParam;

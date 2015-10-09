@@ -3,20 +3,23 @@
 
 #include <opencv2/core/core.hpp>
 
-struct Result
-{
-	int label;
-	float confidence;
-	float confidence2;
-};
+
 
 class Classifier
 {
 public:
+    struct Result
+    {
+        int label;
+        float confidence;
+        float confidence2;
+    };
+
     Classifier();
-
+    virtual void SetParams(const std::string& params_string) = 0;
+    virtual void SetParams(const cv::FileNode& params_file_node) = 0;
+    virtual void Init() = 0;
     virtual Result Classify(cv::Mat &img) = 0;
-
     virtual ~Classifier();
 };
 
