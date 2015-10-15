@@ -9,8 +9,6 @@ using std::shared_ptr;
 using std::string;
 using std::vector;
 
-// All Caffe specific classes are hided to the source file,
-// making Caffe dependency optional rather that obligatory.
 struct CaffeClassifier::Impl {
     typedef CaffeClassifier::Blobf Blobf;
     typedef CaffeClassifier::Result Result;

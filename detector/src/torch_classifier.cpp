@@ -1,9 +1,8 @@
-#include <torch_classifier.hpp>
+#include "torch_classifier.hpp"
 
 #include <iostream>
-
-#include "opencv2/highgui/highgui.hpp"
-#include "opencv2/imgproc/imgproc.hpp"
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 using namespace cv;
 using namespace std;
@@ -49,8 +48,6 @@ FacesClassifier::~FacesClassifier()
 {
     lua_close(L);
 }
-
-
 
 Result FacesClassifier::Classify(Mat& img)
 {
