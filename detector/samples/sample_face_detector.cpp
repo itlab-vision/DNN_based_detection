@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <sstream>
+#include <memory>
 
 #include <omp.h>
 
@@ -10,6 +11,7 @@
 
 #include "detector.hpp"
 #include "torch_classifier.hpp"
+#include "classifier_factory.hpp"
 
 #include <stdio.h>
 #define TIMER_START(name) int64 t_##name = getTickCount()
@@ -22,7 +24,7 @@ using namespace cv;
 int readArguments(int argc, char **argv, vector<string> &filenames, string &resultDir, string &resultImgsDir,
                   string &mode, int &step, double &scale, int &minNeighbours, bool &groupRect);
 
-void detectListImages(vector<string> &filenames, Ptr<Classifier> classifier, int step, double scale, int minNeighbours,
+void detectListImages(vector<string> &filenames, shared_ptr<Classifier> classifier, int step, double scale, int minNeighbours,
                       bool groupRect, string &resultDir, string &resultImgsDir, string &resultFilename);
 
 void EllipseToRect(double majorRadius, double minorRadius, double angle, double x, double y, Rect &rect);
@@ -49,7 +51,8 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    Ptr<Classifier> classifier = Ptr<Classifier>(new TorchClassifier());
+    ClassifierFactory factory;
+    shared_ptr<Classifier> classifier = factory.CreateClassifier(TORCH_CLASSIFIER);
     if (mode.compare("-i") == 0)
     {
         string resultFilename = "result.txt";
@@ -170,7 +173,7 @@ int main(int argc, char** argv)
 	return 0;
 }
 
-void detectListImages(vector<string> &filenames, Ptr<Classifier> classifier, int step, double scale,
+void detectListImages(vector<string> &filenames, shared_ptr<Classifier> classifier, int step, double scale,
                       int minNeighbours, bool groupRect, string &resultDir, string &resultImgsDir,
                       string &resultFilename)
 {
@@ -185,7 +188,8 @@ void detectListImages(vector<string> &filenames, Ptr<Classifier> classifier, int
     vector<Rect> rects;
     vector<double> scores;
 
-    shared_ptr<Classifier> classifier1(new TorchClassifier());
+    ClassifierFactory factory;
+    shared_ptr<Classifier> classifier1(factory.CreateClassifier(TORCH_CLASSIFIER));
     Detector detector(classifier1, Size(32, 32), step, step,
                       scale, minNeighbours, groupRect);
 

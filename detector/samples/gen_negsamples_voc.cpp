@@ -19,6 +19,7 @@ int main(int argc, char **argv)
 
 #include "detector.hpp"
 #include "torch_classifier.hpp"
+#include "factory_classifier.hpp"
 
 #include "rapidXml/rapidxml.hpp"
 

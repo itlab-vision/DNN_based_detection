@@ -8,6 +8,7 @@
 
 #include "detector.hpp"
 #include "torch_classifier.hpp"
+#include "classifier_factory.hpp"
 
 #include <omp.h>
 
@@ -57,7 +58,8 @@ int main(int argc, char **argv)
 
     cout << faces.size() << endl;
 
-    shared_ptr<Classifier> classifier(new TorchClassifier());
+    ClassifierFactory factory;
+    shared_ptr<Classifier> classifier = factory.CreateClassifier(TORCH_CLASSIFIER);
     Detector detector(classifier, Size(32, 32), 1, 1, 1.2, 3, true);
 
     for (uint i = 1; i < annotsFilenames.size(); i++)

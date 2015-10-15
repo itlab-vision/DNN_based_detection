@@ -49,6 +49,7 @@ if (WITH_CAFFE)
         include_directories(${Caffe_INCLUDE_DIRS})
         target_link_libraries(${PROJECT_NAME} ${Caffe_LIBRARIES})
     endif()
+    add_definitions(-DHAVE_CAFFE)
 endif()
 
 if (WITH_CPU_ONLY)
@@ -62,6 +63,7 @@ if (WITH_LUA)
         include_directories(${LUA_INCLUDE_DIR})
         target_link_libraries(${PROJECT_NAME} ${LUA_LIBRARIES})
     endif()
+    add_definitions(-DHAVE_LUA)
 endif()
 #----------------------------------------------------------------------------------#
 

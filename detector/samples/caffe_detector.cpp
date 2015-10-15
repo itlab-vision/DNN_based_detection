@@ -7,6 +7,7 @@
 
 #include "detector.hpp"
 #include "caffe_classifier.hpp"
+#include "classifier_factory.hpp"
 
 using namespace std;
 using cv::Rect;
@@ -95,7 +96,8 @@ int main(int argc, char** argv) {
 
     args.params_file_node = fs.root();
 
-    shared_ptr<Classifier> classifier(new CaffeClassifier());
+    ClassifierFactory factory;
+    shared_ptr<Classifier> classifier = factory.CreateClassifier(CAFFE_CLASSIFIER);
     classifier->SetParams(args.params_file_node);
     classifier->Init();
 
