@@ -1,5 +1,13 @@
 # get all cpp-files in current directory
 file(GLOB samples_list RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.cpp)
+if (NOT WITH_CAFFE)
+    list(REMOVE_ITEM samples_list caffe_detector.cpp)
+endif()
+if (NOT WITH_LUA)
+    list(REMOVE_ITEM samples_list gen_negsamples_lfw.cpp)
+    list(REMOVE_ITEM samples_list gen_negsamples_voc.cpp)
+    list(REMOVE_ITEM samples_list sample_face_detector.cpp)
+endif()
 
 foreach(sample_filename ${samples_list})
   # get file name without extension

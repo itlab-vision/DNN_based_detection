@@ -9,8 +9,6 @@ using std::shared_ptr;
 using std::string;
 using std::vector;
 
-#ifdef HAVE_CAFFE
-
 // All Caffe specific classes are hided to the source file,
 // making Caffe dependency optional rather that obligatory.
 struct CaffeClassifier::Impl {
@@ -183,55 +181,3 @@ vector<CaffeClassifier::Result> CaffeClassifier::Classify(const vector<Mat>& ima
 CaffeClassifier::~CaffeClassifier()
 {}
 
-#else
-
-struct Impl
-{
-};
-
-namespace
-{
-    void NotImplemented()
-    {
-        std::cerr << "Not implemented." << std::endl;
-    }
-}
-
-CaffeClassifier::CaffeClassifier()
-{
-    NotImplemented();
-}
-
-void CaffeClassifier::SetParams(const string& /*params_string*/)
-{
-    NotImplemented();
-}
-
-void CaffeClassifier::SetParams(const FileNode& /*params_file_node*/)
-{
-    NotImplemented();
-}
-
-void CaffeClassifier::Init()
-{
-    NotImplemented();
-}
-
-CaffeClassifier::Result CaffeClassifier::Classify(Mat& /*image*/)
-{
-    NotImplemented();
-    return Result();
-}
-
-vector<CaffeClassifier::Result> CaffeClassifier::Classify(const vector<Mat>& images)
-{
-    NotImplemented();
-    return {Result()};
-}
-
-CaffeClassifier::~CaffeClassifier()
-{
-    NotImplemented();
-}
-
-#endif

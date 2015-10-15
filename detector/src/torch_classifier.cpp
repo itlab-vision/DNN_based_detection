@@ -8,8 +8,6 @@
 using namespace cv;
 using namespace std;
 
-#ifdef HAVE_LUA
-
 extern "C" {
 #include "lua.hpp"
 #include "luaT.h"
@@ -94,16 +92,3 @@ Result FacesClassifier::Classify(Mat& img)
     delete[] tensorData;
     return result;
 }
-
-#else
-
-TorchClassifier::TorchClassifier() {}
-
-Classifier::Result TorchClassifier::Classify(Mat& /*img*/)
-{
-    return Result();
-}
-
-TorchClassifier::~TorchClassifier() {}
-
-#endif
