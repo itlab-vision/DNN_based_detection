@@ -8,8 +8,8 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
-#include "Detector.hpp"
-#include "lua_classifier.hpp"
+#include "detector.hpp"
+#include "torch_classifier.hpp"
 
 #include <stdio.h>
 #define TIMER_START(name) int64 t_##name = getTickCount()
@@ -49,7 +49,7 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    Ptr<Classifier> classifier = Ptr<Classifier>(new LuaClassifier());
+    Ptr<Classifier> classifier = Ptr<Classifier>(new TorchClassifier());
     if (mode.compare("-i") == 0)
     {
         string resultFilename = "result.txt";
@@ -185,7 +185,7 @@ void detectListImages(vector<string> &filenames, Ptr<Classifier> classifier, int
     vector<Rect> rects;
     vector<double> scores;
 
-    shared_ptr<Classifier> classifier1(new LuaClassifier());
+    shared_ptr<Classifier> classifier1(new TorchClassifier());
     Detector detector(classifier1, Size(32, 32), step, step,
                       scale, minNeighbours, groupRect);
 

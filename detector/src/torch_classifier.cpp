@@ -1,4 +1,4 @@
-#include <lua_classifier.hpp>
+#include <torch_classifier.hpp>
 
 #include <iostream>
 
@@ -97,15 +97,13 @@ Result FacesClassifier::Classify(Mat& img)
 
 #else
 
-LuaClassifier::LuaClassifier()
-{}
+TorchClassifier::TorchClassifier() {}
 
-Classifier::Result LuaClassifier::Classify(Mat& /*img*/)
+Classifier::Result TorchClassifier::Classify(Mat& /*img*/)
 {
     return Result();
 }
 
-LuaClassifier::~LuaClassifier()
-{}
+TorchClassifier::~TorchClassifier() {}
 
 #endif

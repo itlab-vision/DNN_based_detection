@@ -1,11 +1,5 @@
-#include "Classifier.hpp"
+#include "classifier.hpp"
 
-Classifier::Classifier()
-{
+Classifier::Classifier() { }
 
-}
-
-Classifier::~Classifier()
-{
-    
-}
+Classifier::~Classifier() { }

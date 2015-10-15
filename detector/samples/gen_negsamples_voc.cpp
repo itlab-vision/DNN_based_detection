@@ -17,8 +17,8 @@ int main(int argc, char **argv)
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
-#include "Detector.hpp"
-#include "lua_classifier.hpp"
+#include "detector.hpp"
+#include "torch_classifier.hpp"
 
 #include "rapidXml/rapidxml.hpp"
 
@@ -42,15 +42,15 @@ void getBackImg(Mat &img, const vector<Rect> &objRects, vector<Mat> &backImgs);
 
 int main(int argc, char **argv)
 {
-	string annotsFilename;
-	if (readArguments(argc, argv, annotsFilename) != 0)
+    string annotsFilename;
+    if (readArguments(argc, argv, annotsFilename) != 0)
     {
         return 1;
     }
     /*annotsFilename = "/home/artem/projects/itlab/negatives/0_db/VOCdevkit/VOC2007/annots.txt";
-	ifstream in(annotsFilename);
-	vector<string> annotsFilenames;
-	while (!in.eof())
+    ifstream in(annotsFilename);
+    vector<string> annotsFilenames;
+    while (!in.eof())
     {
         string filename;
         in >> filename;
@@ -65,59 +65,59 @@ int main(int argc, char **argv)
     vector<string> annotsFilenames;
     getdir(pathToAnnotation, annotsFilenames);
     for (int i = 0; i < 40; i++)
-    	cout << annotsFilenames[i] << endl;
+        cout << annotsFilenames[i] << endl;
     */
     /*
     vector<string> annotsFilenames;
     if ( !getdir(pathToAnnotation, annotsFilenames) )
     {
-    	for (int i = 2; i < annotsFilenames.size(); i++)
-    	{
-    		string annotFilename = pathToAnnotation + annotsFilenames[i];
-    		string imgFilename;
-    		vector<Rect> objRect;
-    		vector<string> objClass;
+       for (int i = 2; i < annotsFilenames.size(); i++)
+       {
+           string annotFilename = pathToAnnotation + annotsFilenames[i];
+           string imgFilename;
+           vector<Rect> objRect;
+           vector<string> objClass;
 
-    		readAnnotationFile(annotFilename, imgFilename, objRect, objClass);
-    		Mat img = imread(pathToImages + imgFilename, IMREAD_COLOR);
-    		
-    		for (int j = 0; j < objRect.size(); j++)
-    		{
-    			Mat objImg = img(objRect[j]);
-    			const double windowSize = 32.0;
-        		double coef = 0.0;
-        		if (objRect[j].height < objRect[j].width)
-        		  	coef = objRect[j].height;
-        		else
-        		   	coef = objRect[j].width;
-        		double scale = windowSize / coef;
-        		resize(objImg, objImg, Size(), scale, scale);
-        		objImg = objImg( Rect(0, 0, (int)windowSize, (int)windowSize) );
+           readAnnotationFile(annotFilename, imgFilename, objRect, objClass);
+           Mat img = imread(pathToImages + imgFilename, IMREAD_COLOR);
 
-    	    	int pos = imgFilename.find(".jpg");
-    	    	string name = imgFilename.substr(0, pos);
-    	    	stringstream ss;
-    	    	ss << pathToResultImages << objClass[j] << "/" << name << "_" << j << ".jpg";
-    	    	imwrite(ss.str(), objImg);
-    		}
-    		
-    		vector<Mat> backImgs;
-    		getBackImg(img, objRect, backImgs);
-    		for (int j = 0; j < backImgs.size(); j++)
-    		{
-    			int pos = imgFilename.find(".jpg");
-    	    	string name = imgFilename.substr(0, pos);
-    	    	stringstream ss;
-    	    	ss << pathToResultImages << "background/" << name << "_" << j << ".jpg";
+           for (int j = 0; j < objRect.size(); j++)
+           {
+                Mat objImg = img(objRect[j]);
+                const double windowSize = 32.0;
+                    double coef = 0.0;
+                if (objRect[j].height < objRect[j].width)
+                    coef = objRect[j].height;
+                else
+                    coef = objRect[j].width;
+                double scale = windowSize / coef;
+                resize(objImg, objImg, Size(), scale, scale);
+                objImg = objImg( Rect(0, 0, (int)windowSize, (int)windowSize) );
 
-    			imwrite(ss.str(), backImgs[j]);
-    		}
-    		cout << i << endl;
-    	}
+                int pos = imgFilename.find(".jpg");
+                string name = imgFilename.substr(0, pos);
+                stringstream ss;
+                ss << pathToResultImages << objClass[j] << "/" << name << "_" << j << ".jpg";
+                imwrite(ss.str(), objImg);
+            }
+
+            vector<Mat> backImgs;
+            getBackImg(img, objRect, backImgs);
+            for (int j = 0; j < backImgs.size(); j++)
+            {
+                int pos = imgFilename.find(".jpg");
+                string name = imgFilename.substr(0, pos);
+                stringstream ss;
+                ss << pathToResultImages << "background/" << name << "_" << j << ".jpg";
+
+                imwrite(ss.str(), backImgs[j]);
+            }
+            cout << i << endl;
+        }
     }
     */
-    
-	return 0;
+
+    return 0;
 }
 
 void getBackImg(Mat &img, const vector<Rect> &objRects, vector<Mat> &backImgs)

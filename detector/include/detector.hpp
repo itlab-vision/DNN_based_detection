@@ -1,13 +1,12 @@
 #ifndef _DETECTOR_HPP_
 #define _DETECTOR_HPP_
 
-#include "Classifier.hpp"
+#include "classifier.hpp"
 
 #include <vector>
 #include <memory>
 
 #include <opencv2/core/core.hpp>
-
 
 // TODO: replace it as a class field
 const float DETECTOR_THRESHOLD = 0.5f;
@@ -21,7 +20,7 @@ public:
     void Detect(const cv::Mat &img, std::vector<int> &labels,
                 std::vector<double> &scores, std::vector<cv::Rect> &rects);
 private:
-	void Preprocessing(cv::Mat &img);
+    void Preprocessing(cv::Mat &img);
 
     std::shared_ptr<Classifier> classifier;
     cv::Size window_size;

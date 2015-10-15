@@ -8,8 +8,7 @@
 #include "caffe/caffe.hpp"
 #include "opencv2/core/core.hpp"
 
-#include "Classifier.hpp"
-
+#include "classifier.hpp"
 
 class CaffeClassifier : public Classifier
 {

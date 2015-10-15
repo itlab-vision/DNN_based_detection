@@ -5,7 +5,7 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 
-#include "Detector.hpp"
+#include "detector.hpp"
 #include "caffe_classifier.hpp"
 
 using namespace std;
