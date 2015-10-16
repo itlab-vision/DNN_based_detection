@@ -63,7 +63,7 @@ if (WITH_LUA)
         include_directories(${LUA_INCLUDE_DIR})
         target_link_libraries(${PROJECT_NAME} ${LUA_LIBRARIES})
     endif()
-    add_definitions(-DHAVE_LUA)
+    add_definitions(-DHAVE_TORCH)
 endif()
 #----------------------------------------------------------------------------------#
 

@@ -7,7 +7,6 @@
 #include <opencv2/imgproc/imgproc.hpp>
 
 #include "detector.hpp"
-#include "torch_classifier.hpp"
 #include "classifier_factory.hpp"
 
 #include <omp.h>

@@ -18,7 +18,6 @@ int main(int argc, char **argv)
 #include <opencv2/imgproc/imgproc.hpp>
 
 #include "detector.hpp"
-#include "torch_classifier.hpp"
 #include "factory_classifier.hpp"
 
 #include "rapidXml/rapidxml.hpp"
