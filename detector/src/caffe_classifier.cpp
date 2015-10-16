@@ -1,5 +1,7 @@
 #include "caffe_classifier.hpp"
 
+#include "caffe/caffe.hpp"
+
 #include <memory>
 
 using cv::FileNode;
@@ -10,7 +12,7 @@ using std::string;
 using std::vector;
 
 struct CaffeClassifier::Impl {
-    typedef CaffeClassifier::Blobf Blobf;
+    typedef caffe::Blob<float> Blobf;
     typedef CaffeClassifier::Result Result;
 
     Impl();

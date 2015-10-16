@@ -5,7 +5,6 @@
 #include <string>
 #include <vector>
 
-#include "caffe/caffe.hpp"
 #include "opencv2/core/core.hpp"
 
 #include "classifier.hpp"
@@ -13,7 +12,6 @@
 class CaffeClassifier : public Classifier
 {
 public:
-    typedef caffe::Blob<float> Blobf;
     typedef Classifier::Result Result;
 
     CaffeClassifier();
