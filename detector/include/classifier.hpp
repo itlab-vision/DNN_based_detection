@@ -3,6 +3,8 @@
 
 #include <opencv2/core/core.hpp>
 
+class ClassifierFactory;
+
 class Classifier
 {
 public:

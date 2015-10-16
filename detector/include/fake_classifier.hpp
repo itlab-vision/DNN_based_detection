@@ -17,11 +17,7 @@ class FakeClassifier : public Classifier
 {
 public:
     typedef Classifier::Result Result;
-
-    FakeClassifier() 
-    { 
-        throw NotImplemented();     
-    }
+    
     virtual void SetParams(const std::string& params_string)
     { 
         throw NotImplemented();
@@ -39,6 +35,14 @@ public:
         throw NotImplemented();
     }
     virtual ~FakeClassifier() { }
+
+    friend ClassifierFactory;
+
+protected:
+    FakeClassifier() 
+    { 
+        throw NotImplemented();     
+    }
 };
 
 #endif

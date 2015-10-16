@@ -14,7 +14,6 @@ class CaffeClassifier : public Classifier
 public:
     typedef Classifier::Result Result;
 
-    CaffeClassifier();
     virtual void SetParams(const std::string& params_string);
     virtual void SetParams(const cv::FileNode& params_file_node);
     virtual void Init();
@@ -22,9 +21,13 @@ public:
     virtual std::vector<Result> Classify(const std::vector<cv::Mat>& images);
     virtual ~CaffeClassifier();
 
+    friend ClassifierFactory;
+
 private:
     struct Impl;
     std::shared_ptr<Impl> impl;
+protected:
+    CaffeClassifier();
 };
 
 #endif
