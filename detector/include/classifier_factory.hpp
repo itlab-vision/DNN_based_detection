@@ -7,16 +7,16 @@
 
 enum ClassifierType
 {
-	FAKE_CLASSIFIER = 0,
-	CAFFE_CLASSIFIER,
-	TORCH_CLASSIFIER
+    FAKE_CLASSIFIER = 0,
+    CAFFE_CLASSIFIER,
+    TORCH_CLASSIFIER
 };
 
 class ClassifierFactory
 {
 public:
-	ClassifierFactory() { };
-	std::shared_ptr<Classifier> CreateClassifier(ClassifierType);
+    ClassifierFactory() { };
+    std::shared_ptr<Classifier> CreateClassifier(ClassifierType);
 };
 
 #endif

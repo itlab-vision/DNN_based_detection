@@ -7,10 +7,10 @@
 
 class NotImplemented : public std::exception
 {
-	virtual const char* what() const throw()
-	{
-		return "Class is not implemented.";
-	}
+    virtual const char* what() const throw()
+    {
+        return "Class is not implemented.";
+    }
 };
 
 class FakeClassifier : public Classifier
@@ -20,7 +20,7 @@ public:
 
     FakeClassifier() 
     { 
-    	throw NotImplemented();    	
+        throw NotImplemented();     
     }
     virtual void SetParams(const std::string& params_string)
     { 

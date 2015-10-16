@@ -122,11 +122,11 @@ int main(int argc, char **argv)
 
 void getBackImg(Mat &img, const vector<Rect> &objRects, vector<Mat> &backImgs)
 {
-	const int windowSize = 128;
-	int dx = 128, dy = 128;
-	backImgs.clear();
-	
-	for (int y = 0; y < img.rows - windowSize + 1; y += dy)
+    const int windowSize = 128;
+    int dx = 128, dy = 128;
+    backImgs.clear();
+    
+    for (int y = 0; y < img.rows - windowSize + 1; y += dy)
     {
         for (int x = 0; x < img.cols - windowSize + 1; x += dx)
         {
@@ -134,18 +134,18 @@ void getBackImg(Mat &img, const vector<Rect> &objRects, vector<Mat> &backImgs)
             bool flag = false;
             for (uint i = 0; i < objRects.size(); i++)
             {
-            	Rect intersecRect = rect & objRects[i];
-            	if (intersecRect.width != 0 || intersecRect.height != 0)
-            	{
-            		flag = true;
-            		break;
-            	}
+                Rect intersecRect = rect & objRects[i];
+                if (intersecRect.width != 0 || intersecRect.height != 0)
+                {
+                    flag = true;
+                    break;
+                }
             }
             if (!flag)
             {
-            	Mat backImg = img(rect);
-            	resize(backImg, backImg, Size(32, 32), 0, 0);
-            	backImgs.push_back(backImg);
+                Mat backImg = img(rect);
+                resize(backImg, backImg, Size(32, 32), 0, 0);
+                backImgs.push_back(backImg);
             }
         }
     }
@@ -169,59 +169,59 @@ int getdir (string dir, vector<string> &files)
 
 void readAnnotationFile(const string &filename, string &imgFilename, vector<Rect> &objRects, vector<string> &objClass)
 {
-	ifstream inAnnot(filename);
+    ifstream inAnnot(filename);
     stringstream strStream;
-	strStream << inAnnot.rdbuf();//read the file
-	string str = strStream.str();//str holds the content of the file
+    strStream << inAnnot.rdbuf();//read the file
+    string str = strStream.str();//str holds the content of the file
 
     xml_document<> doc;    // character type defaults to char
     char *text = new char[str.size() + 1];
     strcpy (text, str.c_str());
-	doc.parse<0>(text);
+    doc.parse<0>(text);
 
-	Size imgSize;;
-	for (xml_node<> *node =  doc.first_node()->first_node(); node; node = node->next_sibling())
-	{
-		string nodeName(node->name());
-		if (nodeName.find("filename") != string::npos)
-		{
-			imgFilename = node->value();
-		}
-		else if (nodeName.find("size") != string::npos)
-		{
-			xml_node<> *nodeSize = node->first_node();
-			imgSize.width = atoi(nodeSize->value());
-			nodeSize = nodeSize->next_sibling();
-			imgSize.height = atoi(nodeSize->value());
-		}
-		else if (nodeName.find("object") != string::npos)
-		{
-			for (xml_node<> *nodeObj =  node->first_node(); nodeObj; nodeObj = nodeObj->next_sibling())
-			{
-				string nodeObjName = nodeObj->name();
-				if (nodeObjName.find("name") != string::npos)
-				{
-					objClass.push_back(nodeObj->value()); 
-				}
-				else if (nodeObjName.find("bndbox") != string::npos)
-				{
-					int xmin, ymin, xmax, ymax;
-					xml_node<> *nodeRect = nodeObj->first_node();
-					xmin = atoi(nodeRect->value());
-					nodeRect = nodeRect->next_sibling();
-					ymin = atoi(nodeRect->value());
-					nodeRect = nodeRect->next_sibling();
-					xmax = atoi(nodeRect->value());
-					nodeRect = nodeRect->next_sibling();
-					ymax = atoi(nodeRect->value());
+    Size imgSize;;
+    for (xml_node<> *node =  doc.first_node()->first_node(); node; node = node->next_sibling())
+    {
+        string nodeName(node->name());
+        if (nodeName.find("filename") != string::npos)
+        {
+            imgFilename = node->value();
+        }
+        else if (nodeName.find("size") != string::npos)
+        {
+            xml_node<> *nodeSize = node->first_node();
+            imgSize.width = atoi(nodeSize->value());
+            nodeSize = nodeSize->next_sibling();
+            imgSize.height = atoi(nodeSize->value());
+        }
+        else if (nodeName.find("object") != string::npos)
+        {
+            for (xml_node<> *nodeObj =  node->first_node(); nodeObj; nodeObj = nodeObj->next_sibling())
+            {
+                string nodeObjName = nodeObj->name();
+                if (nodeObjName.find("name") != string::npos)
+                {
+                    objClass.push_back(nodeObj->value()); 
+                }
+                else if (nodeObjName.find("bndbox") != string::npos)
+                {
+                    int xmin, ymin, xmax, ymax;
+                    xml_node<> *nodeRect = nodeObj->first_node();
+                    xmin = atoi(nodeRect->value());
+                    nodeRect = nodeRect->next_sibling();
+                    ymin = atoi(nodeRect->value());
+                    nodeRect = nodeRect->next_sibling();
+                    xmax = atoi(nodeRect->value());
+                    nodeRect = nodeRect->next_sibling();
+                    ymax = atoi(nodeRect->value());
 
-					objRects.push_back(Rect(xmin, ymin, xmax - xmin, ymax - ymin));
-				}
-			} 
-		}
-	}
-	delete[] text;
-	inAnnot.close();
+                    objRects.push_back(Rect(xmin, ymin, xmax - xmin, ymax - ymin));
+                }
+            } 
+        }
+    }
+    delete[] text;
+    inAnnot.close();
 }
 
 int readArguments(int argc, char **argv, string &annotsFilename)

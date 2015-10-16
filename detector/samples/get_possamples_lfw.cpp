@@ -20,21 +20,21 @@ void readAnnotationFile(const string &filename, string &imgFilename, vector<Rect
 
 int main(int argc, char **argv)
 {
-	string annotsFilename;
-	if (readArguments(argc, argv, annotsFilename) != 0)
+    string annotsFilename;
+    if (readArguments(argc, argv, annotsFilename) != 0)
     {
         return 1;
     }
     annotsFilename = "/home/artem/projects/itlab/itlab-vision-faces-detection/ItlabFaceDetector/imgs/lfw_ffd_ann.txt";
-	ifstream in(annotsFilename);
-	vector<string> annotsFilenames;
+    ifstream in(annotsFilename);
+    vector<string> annotsFilenames;
     vector<Rect> faces;
     vector<Rect> leftEyes;
     vector<Rect> mouthes;
     vector<Rect> outers;
     vector<Rect> rightEyes;
     vector<Rect> noses;
-	while (!in.eof())
+    while (!in.eof())
     {
         string filename;
         
@@ -110,7 +110,7 @@ int main(int argc, char **argv)
         }
     }*/
     waitKey(0);
-	return 0;
+    return 0;
 }
 
 int readArguments(int argc, char **argv, string &annotsFilename)

@@ -169,7 +169,7 @@ int main(int argc, char** argv)
         */
     }
 
-	return 0;
+    return 0;
 }
 
 void detectListImages(vector<string> &filenames, shared_ptr<Classifier> classifier, int step, double scale,
