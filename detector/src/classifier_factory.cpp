@@ -16,7 +16,7 @@ std::shared_ptr<Classifier> ClassifierFactory::CreateClassifier(ClassifierType t
     {
     case CAFFE_CLASSIFIER:
         {
-#ifdef HAVE_CAFFE           
+#ifdef HAVE_CAFFE
             std::shared_ptr<Classifier> classifier(new CaffeClassifier());
             return classifier;
 #endif
