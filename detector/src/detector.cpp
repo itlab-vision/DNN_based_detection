@@ -40,7 +40,8 @@ Detector::Detector(std::shared_ptr<Classifier> classifier_,
 
 void Detector::Detect(const Mat &img, vector<int> &labels,
                       vector<double> &scores, vector<Rect> &rects,
-                      const float detectorThreshold) {
+                      const float detectorThreshold, 
+                      const double mergeRectThreshold) {
     CV_Assert(scale > 1.0 && scale <= 2.0);
 
     vector<Mat> imgPyramid;
@@ -79,7 +80,7 @@ void Detector::Detect(const Mat &img, vector<int> &labels,
             }
         }
         if (group_rect) {
-            groupRectangles(layerRect, min_neighbours, 0.2);
+            groupRectangles(layerRect, min_neighbours, mergeRectThreshold);
         }
         rects.insert(rects.end(), layerRect.begin(), layerRect.end());
         newScale *= scale;

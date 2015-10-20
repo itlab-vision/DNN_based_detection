@@ -16,7 +16,8 @@ public:
              int min_neighbours, bool group_rect);
     void Detect(const cv::Mat &img, std::vector<int> &labels,
                 std::vector<double> &scores, std::vector<cv::Rect> &rects,
-                const float detectorThreshold = 0.5f);
+                const float detectorThreshold = 0.5f,
+                const double mergeRectThreshold = 0.2);
 private:
     void Preprocessing(cv::Mat &img);
 
