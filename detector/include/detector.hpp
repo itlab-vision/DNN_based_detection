@@ -8,9 +8,6 @@
 
 #include <opencv2/core/core.hpp>
 
-// TODO: replace it as a class field
-const float DETECTOR_THRESHOLD = 0.5f;
-
 class Detector
 {
 public:
@@ -18,7 +15,8 @@ public:
              int dx, int dy, double scale,
              int min_neighbours, bool group_rect);
     void Detect(const cv::Mat &img, std::vector<int> &labels,
-                std::vector<double> &scores, std::vector<cv::Rect> &rects);
+                std::vector<double> &scores, std::vector<cv::Rect> &rects,
+                const float detectorThreshold = 0.5f);
 private:
     void Preprocessing(cv::Mat &img);
 

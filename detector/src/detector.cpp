@@ -39,7 +39,8 @@ Detector::Detector(std::shared_ptr<Classifier> classifier_,
 {}
 
 void Detector::Detect(const Mat &img, vector<int> &labels,
-                      vector<double> &scores, vector<Rect> &rects) {
+                      vector<double> &scores, vector<Rect> &rects,
+                      const float detectorThreshold) {
     CV_Assert(scale > 1.0 && scale <= 2.0);
 
     vector<Mat> imgPyramid;
@@ -56,8 +57,8 @@ void Detector::Detect(const Mat &img, vector<int> &labels,
     }
 
     float newScale = 1;
+    
     //for every layer of pyramid
-
     for (uint i = 0; i < imgPyramid.size(); i++) {
         Mat layer = imgPyramid[i];
         vector<Rect> layerRect;
@@ -68,7 +69,7 @@ void Detector::Detect(const Mat &img, vector<int> &labels,
                 Mat window = layer(rect);
 
                 Classifier::Result result = classifier->Classify(window);
-                if (fabs(result.confidence) < DETECTOR_THRESHOLD && result.label == 1) {
+                if (fabs(result.confidence) < detectorThreshold && result.label == 1) {
                     labels.push_back(result.label);
                     scores.push_back(result.confidence);
 
