@@ -53,7 +53,7 @@ void detect(shared_ptr<Classifier> classifier, Args args, ofstream &out) {
         Mat img = imread(args.filenames[i], cv::IMREAD_COLOR);
         cout << "Processing " << args.filenames[i] << endl;
 
-        detector.Detect(img, labels, scores, rects);
+        detector.DetectMultiScale(img, labels, scores, rects);
 
         out << args.filenames[i] << endl << rects.size() << endl;
         for (size_t j = 0; j < rects.size(); j++) {

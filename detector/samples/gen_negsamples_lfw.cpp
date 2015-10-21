@@ -71,7 +71,7 @@ int main(int argc, char **argv)
         vector<int> labels;
         vector<Rect> negatives;
 
-        detector.Detect(img, labels, scores, rects);
+        detector.DetectMultiScale(img, labels, scores, rects);
 
         for (uint j = 0; j < rects.size(); j++)
         {

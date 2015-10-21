@@ -199,7 +199,7 @@ void detectListImages(vector<string> &filenames, shared_ptr<Classifier> classifi
 
         cout << filenames[i] << " is now proccessed" << endl;
 
-        detector.Detect(img, labels, scores, rects);
+        detector.DetectMultiScale(img, labels, scores, rects);
 
         if (out.is_open())
         {
