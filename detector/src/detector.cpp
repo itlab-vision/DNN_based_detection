@@ -38,51 +38,63 @@ Detector::Detector(std::shared_ptr<Classifier> classifier_,
       group_rect(group_rect_)
 {}
 
+void Detector::CreateImagePyramid(const cv::Mat &img, std::vector<Mat> &pyramid,
+                                  std::vector<float> &scales)
+{
+    pyramid.clear();
+    pyramid.push_back(img);
+    Mat resizedImg;
+    float scaleFactor = 1.0f;
+    while (img.cols > window_size.width && img.rows > window_size.height) {        
+        resize(img, resizedImg, Size((int)(img.cols / scale), (int)(img.rows / scale)), 0, 0, INTER_LINEAR);        
+        pyramid.push_back(resizedImg.clone());
+        scales.push_back(scaleFactor);        
+        scaleFactor *= scale;
+    }    
+}
+
 void Detector::Detect(const Mat &img, vector<int> &labels,
                       vector<double> &scores, vector<Rect> &rects,
                       const float detectorThreshold, 
-                      const double mergeRectThreshold) {
+                      const double mergeRectThreshold)
+{
     CV_Assert(scale > 1.0 && scale <= 2.0);
 
     vector<Mat> imgPyramid;
-    Mat base_img(img);
-    imgPyramid.push_back(base_img);
+    vector<float> scales;
+    CreateImagePyramid(img, imgPyramid, scales);
 
-    Mat tmp(base_img);
-
-    while (tmp.cols > window_size.width && tmp.rows > window_size.height) {
-        Mat tmp2;
-        resize(tmp, tmp2, Size((int)(tmp.cols / scale), (int)(tmp.rows / scale)), 0, 0, INTER_LINEAR);
-        tmp2.copyTo(tmp);
-        imgPyramid.push_back(tmp2);
-    }
-
-    float newScale = 1;
-    
     //for every layer of pyramid
-    for (uint i = 0; i < imgPyramid.size(); i++) {
+    for (uint i = 0; i < imgPyramid.size(); i++)
+    {
         Mat layer = imgPyramid[i];
         vector<Rect> layerRect;
+        float scaleFactor = scales[i];
 
-        for (int y = 0; y < layer.rows - window_size.height + 1; y += dy) {
-            for (int x = 0; x < layer.cols - window_size.width + 1; x += dx) {
+        for (int y = 0; y < layer.rows - window_size.height + 1; y += dy)
+        {
+            for (int x = 0; x < layer.cols - window_size.width + 1; x += dx)
+            {
                 Rect rect(x, y, window_size.width, window_size.height);
                 Mat window = layer(rect);
 
                 Classifier::Result result = classifier->Classify(window);
-                if (fabs(result.confidence) < detectorThreshold && result.label == 1) {
+                if (fabs(result.confidence) < detectorThreshold && result.label == 1)
+                {
                     labels.push_back(result.label);
                     scores.push_back(result.confidence);
-
-                    layerRect.push_back( Rect(cvRound(rect.x * newScale), cvRound(rect.y * newScale),
-                                              cvRound(rect.width * newScale), cvRound(rect.height * newScale)) );
+                    layerRect.push_back(
+                      Rect(cvRound(rect.x      * scaleFactor),
+                           cvRound(rect.y      * scaleFactor),
+                           cvRound(rect.width  * scaleFactor),
+                           cvRound(rect.height * scaleFactor)) );
                 }
             }
         }
-        if (group_rect) {
+        if (group_rect)
+        {
             groupRectangles(layerRect, min_neighbours, mergeRectThreshold);
         }
-        rects.insert(rects.end(), layerRect.begin(), layerRect.end());
-        newScale *= scale;
+        rects.insert(rects.end(), layerRect.begin(), layerRect.end());        
     }
 }

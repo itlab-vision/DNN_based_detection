@@ -18,6 +18,9 @@ public:
                 std::vector<double> &scores, std::vector<cv::Rect> &rects,
                 const float detectorThreshold = 0.5f,
                 const double mergeRectThreshold = 0.2);
+    void CreateImagePyramid(const cv::Mat &img, std::vector<cv::Mat> &pyramid,
+                            std::vector<float> &scales);
+
 private:
     void Preprocessing(cv::Mat &img);
 
