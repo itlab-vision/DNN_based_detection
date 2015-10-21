@@ -18,7 +18,7 @@ public:
     virtual void SetParams(const cv::FileNode& params_file_node);
     virtual void Init();
     virtual Result Classify(cv::Mat& image);
-    virtual std::vector<Result> Classify(const std::vector<cv::Mat>& images);
+    virtual std::vector<Result> Classify(const std::vector<cv::Mat>& images);    
     virtual ~CaffeClassifier();
 
     friend ClassifierFactory;

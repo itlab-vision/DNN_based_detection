@@ -34,6 +34,10 @@ public:
     { 
         throw NotImplemented();
     }
+    virtual std::vector<Result> Classify(const std::vector<cv::Mat>& images)
+    {
+        throw NotImplemented();
+    }
     virtual ~FakeClassifier() { }
 
     friend ClassifierFactory;

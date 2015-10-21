@@ -11,6 +11,10 @@ public:
     virtual void SetParams(const cv::FileNode& params_file_node) {}
     virtual void Init() {}
     virtual Result Classify(cv::Mat& img) { return Result(); }
+    virtual std::vector<Result> Classify(const std::vector<cv::Mat>& images)
+    {
+    	return std::vector<Result>();
+    }
     virtual ~TorchClassifier() { };
 
     friend ClassifierFactory;
