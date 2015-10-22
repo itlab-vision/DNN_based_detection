@@ -24,17 +24,21 @@ public:
             const float detectorThreshold = 0.5f,
             const double mergeRectThreshold = 0.2);
     void CreateImagePyramid(const cv::Mat &img, std::vector<cv::Mat> &pyramid,
-            std::vector<float> &scales);
+                            std::vector<float> &scales);
 
 private:
     void Preprocessing(cv::Mat &img);
 #ifdef HAVE_MPI
     void GetLayerWindowsNumber(std::vector<cv::Mat> &imgPyramid,
-            std::vector<int> &winNum);
+        std::vector<int> &winNum);
+    void CreateParallelExecutionSchedule(std::vector<int> &winNum,
+        std::vector<std::vector<int> > &levels, const int np);
     void CreateParallelExecutionSchedule(std::vector<int> &winNum, 
-            std::vector<std::vector<int> > &levels, const int np);
+            std::vector<std::vector<int> > &levels, std::vector<float> &scales,
+            const int np);
     void Detect(std::vector<cv::Mat> &imgPyramid,
             std::vector<std::vector<int> > &levels,
+            std::vector<float> &scales,
             std::vector<int> &labels,
             std::vector<double> &scores, std::vector<cv::Rect> &rects,
             const float detectorThreshold = 0.5f,

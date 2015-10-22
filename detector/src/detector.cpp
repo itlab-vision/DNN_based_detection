@@ -7,7 +7,10 @@
 #include <iostream>
 
 #ifdef HAVE_MPI
+
 #include <mpi.h>
+#define MAX_BBOXES_NUMBER 1000
+
 #endif
 
 using namespace cv;
@@ -114,7 +117,7 @@ void Detector::GetLayerWindowsNumber(std::vector<cv::Mat> &imgPyramid,
 }
 
 void Detector::CreateParallelExecutionSchedule(std::vector<int> &winNum,
-        vector<vector<int> > &levels, const int np)
+        std::vector<std::vector<int> > &levels, const int np)
 {
     // sort by descending order
     vector<int> indeces(winNum.size()), weights(np), disp(np);
@@ -123,9 +126,11 @@ void Detector::CreateParallelExecutionSchedule(std::vector<int> &winNum,
         indeces[i] = i;
     }
     sort(indeces.begin(), indeces.end(),
-      [&winNum](size_t i1, size_t i2) { return winNum[i1] > winNum[i2] });
+      [&winNum](size_t i1, size_t i2) 
+        { return winNum[i1] > winNum[i2]; });
     sort(winNum.begin(), winNum.end(), 
-      [](int a, int b) { return a > b; });
+      [](int a, int b) 
+        { return a > b; });
     // bigest layers will be processed by different processes
     for (int i = 0; i < np; i++)
     {
@@ -141,7 +146,7 @@ void Detector::CreateParallelExecutionSchedule(std::vector<int> &winNum,
             // try to add the next layer to process j and compute variance
             weights[j] += winNum[i];
             int minValue = weights[0], maxValue = weights[0];
-            for (int k = 1; l < np; k++)
+            for (int k = 1; k < np; k++)
             {
                 minValue = min(minValue, weights[k]);
                 maxValue = max(maxValue, weights[k]);
@@ -165,8 +170,72 @@ void Detector::CreateParallelExecutionSchedule(std::vector<int> &winNum,
 }
 
 void Detector::Detect(std::vector<cv::Mat> &imgPyramid,
-        vector<vector<int> > &levels)
-{}
+        vector<vector<int> > &levels, vector<float> &scales,
+        std::vector<int> &labels, std::vector<double> &scores,
+        std::vector<cv::Rect> &rects,
+        const float detectorThreshold,
+        const double mergeRectThreshold)
+{
+    // process levels set to the particular process
+    int np, rank;
+    MPI_Comm_size(MPI_COMM_WORLD, &np);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    vector<int> procLevels = levels[rank];
+    vector<int> procLabels;
+    vector<double> procScores;
+    vector<Rect> procRects;
+    for (int i = 0; i < procLevels.size(); i++)
+    {
+        int levelId = procLevels[i];
+        Detect(imgPyramid[levelId], procLabels, procScores, procRects,
+          scales[levelId], detectorThreshold, mergeRectThreshold);
+    }
+    // recieve results to process 0
+    if (rank == 0)
+    {
+        labels.insert(labels.end(), procLabels.begin(), procLabels.end());
+        scores.insert(scores.end(), procScores.begin(), procScores.end());
+        rects.insert(rects.end(), procRects.begin(), procRects.end());
+        for (int i = 1; i < np; i++)
+        {
+            int bboxesNum = 0;
+            vector<int> childProcLabels(MAX_BBOXES_NUMBER);       
+            MPI_Status status;
+            MPI_Recv(childProcLabels.data(), MAX_BBOXES_NUMBER, MPI_INT, i, 1,
+                MPI_COMM_WORLD, &status);
+            MPI_Get_count(&status, MPI_INT, &bboxesNum);
+            childProcLabels.resize(bboxesNum);
+
+            
+            bboxesNum = 0;
+            vector<double> childProcScores(MAX_BBOXES_NUMBER);
+            MPI_Recv(childProcScores.data(), MAX_BBOXES_NUMBER, MPI_DOUBLE, i, 2,
+                MPI_COMM_WORLD, &status);
+            MPI_Get_count(&status, MPI_INT, &bboxesNum);
+            childProcScores.resize(bboxesNum);
+            
+            // Rect has 4 fields (x, y, width, height)
+            bboxesNum = 0;
+            vector<Rect> childProcRects(MAX_BBOXES_NUMBER);
+            MPI_Recv(childProcRects.data(), MAX_BBOXES_NUMBER * sizeof(Rect) / sizeof(int),
+                MPI_INT, i, 3, MPI_COMM_WORLD, &status);
+            MPI_Get_count(&status, MPI_INT, &bboxesNum);
+            childProcLabels.resize(bboxesNum);
+
+            labels.insert(labels.end(), childProcLabels.begin(), childProcLabels.end());
+            scores.insert(scores.end(), childProcScores.begin(), childProcScores.end());
+            rects.insert(rects.end(), childProcRects.begin(), childProcRects.end());
+        }        
+    }
+    else
+    {
+        MPI_Send(procLabels.data(), procLabels.size(), MPI_INT, 0, 1, MPI_COMM_WORLD);
+        MPI_Send(procScores.data(), procScores.size(), MPI_DOUBLE, 0, 2, MPI_COMM_WORLD);
+        // Rect has 4 fields (x, y, width, height)
+        MPI_Send(procRects.data(), procRects.size() * sizeof(Rect) / sizeof(int), 
+            MPI_INT, 0, 3, MPI_COMM_WORLD);
+    }
+}
 #endif
 
 void Detector::DetectMultiScale(const Mat &img, vector<int> &labels,
@@ -179,7 +248,7 @@ void Detector::DetectMultiScale(const Mat &img, vector<int> &labels,
 #ifdef HAVE_MPI
     int np;    
     MPI_Init(0, 0);
-    MPI_Comm_size(MPI_COMM_WORLD, &np);    
+    MPI_Comm_size(MPI_COMM_WORLD, &np);
     // 1. create scale pyramid
     vector<Mat> imgPyramid;
     vector<float> scales;
@@ -191,7 +260,7 @@ void Detector::DetectMultiScale(const Mat &img, vector<int> &labels,
     vector<vector<int> > levels(imgPyramid.size());
     CreateParallelExecutionSchedule(winNum, levels, np);
     // 4. send layers to child processes and detect  objects on the first layer
-    Detect(imgPyramid, levels, labels, scores, rects,
+    Detect(imgPyramid, levels, scales, labels, scores, rects,
       detectorThreshold, mergeRectThreshold);    
     MPI_Finalize();
 #else
