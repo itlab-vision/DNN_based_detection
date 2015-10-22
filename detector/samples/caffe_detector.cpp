@@ -40,31 +40,15 @@ const char* help = "detector \"input/folder\"\n\
     output of the program is file result.txt in input folder\n\
         \n";
 
-void detect(Detector &detector, std::string &fileName, FILE *out)
-{
-    Mat img = imread(fileName, cv::IMREAD_COLOR);
-    cout << "Processing " << fileName << endl;
-    
-    vector<int> labels;
-    vector<Rect> rects;
-    vector<double> scores;
-    detector.DetectMultiScale(img, labels, scores, rects);
-
-    string fileLine = fileName + "\n" + to_string(rects.size()) + "\n";
-    for (size_t j = 0; j < rects.size(); j++)
-    {
-        fileLine += to_string(rects[j].x) + " " + to_string(rects[j].y) + " "
-            + to_string(rects[j].width) + " " + to_string(rects[j].height) + " "
-            + to_string(scores[j]) + " \n";
-    }
-    fprintf(out, "%s", fileLine.c_str());
-}
 
 #if defined(HAVE_MPI) && defined(PAR_SET_IMAGES)
-void detect(shared_ptr<Classifier> classifier, Args args, FILE *out) 
+
+void detect(shared_ptr<Classifier> classifier, Args args)
 {
     int argc, rank, np, fileStep, leftIdx, rigthIdx;
     char **argv;
+    MPI_File file;
+    MPI_Status status;
     MPI_Init(&argc, &argv);
 
     FileNode params = args.params_file_node;
@@ -81,17 +65,66 @@ void detect(shared_ptr<Classifier> classifier, Args args, FILE *out)
 
     fileStep = args.filenames.size() / np;
     leftIdx = rank * fileStep;
-    rigthIdx = min(rank * (fileStep + 1), (int)(args.filenames.size()));
+    rigthIdx = min(rank * (fileStep + 1), (int)(args.filenames.size()));    
+    string fileLine = "";
     for (int i = leftIdx; i < rigthIdx; i++)
     {
-        detect(detector, args.filenames[i], out);
+        std::string fileName = args.filenames[i];
+        Mat img = imread(fileName, cv::IMREAD_COLOR);
+        cout << "Processing " << fileName << endl;
+    
+        vector<int> labels;
+        vector<Rect> rects;
+        vector<double> scores;
+        detector.DetectMultiScale(img, labels, scores, rects);
+        
+        fileLine += fileName + "\n" + to_string(rects.size()) + "\n";
+        for (size_t j = 0; j < rects.size(); j++)
+        {
+            fileLine += to_string(rects[j].x) + " " + to_string(rects[j].y) + " "
+                + to_string(rects[j].width) + " " + to_string(rects[j].height) + " "
+                + to_string(scores[j]) + " \n";
+        }
     }
-
+    string outFileName = args.input_path + "/result.txt";
+    MPI_File_open(MPI_COMM_WORLD, (char *)outFileName.c_str(),
+        MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &file);
+    MPI_Offset offset = sizeof(fileLine);
+    MPI_File_seek(file, offset, MPI_SEEK_SET);
+    MPI_File_write(file, (void *)(fileLine.c_str()), sizeof(char), MPI_CHAR, &status);
+    MPI_File_close(&file);
     MPI_Finalize();
 }    
+
 #else
-void detect(shared_ptr<Classifier> classifier, Args args, FILE *out)
+
+void detect(Detector &detector, std::string &fileName, ofstream &out)
 {
+    Mat img = imread(fileName, cv::IMREAD_COLOR);
+    cout << "Processing " << fileName << endl;
+    
+    vector<int> labels;
+    vector<Rect> rects;
+    vector<double> scores;
+    detector.DetectMultiScale(img, labels, scores, rects);
+
+    out << fileName << endl << rects.size() << endl;
+    for (size_t j = 0; j < rects.size(); j++)
+    {
+        out << rects[j].x << " " << rects[j].y << " "
+            << rects[j].width << " " << rects[j].height << " "
+            << scores[j]) << " " << endl;
+    }
+}
+
+void detect(shared_ptr<Classifier> classifier, Args args)
+{
+    ofstream out(args.input_path + "/result.txt");
+    if (!out.is_open()) {
+        cout << "Problems with creating output file\n";
+        cout << help;
+        return 1;
+    }
     FileNode params = args.params_file_node;
     int step = params["step"];
     float scale = params["scale"];
@@ -105,6 +138,7 @@ void detect(shared_ptr<Classifier> classifier, Args args, FILE *out)
     {
         detect(detector, args.filenames[i], out);
     }
+    fclose(out);
 }
 #endif
 
@@ -141,16 +175,6 @@ int main(int argc, char** argv) {
     classifier->SetParams(args.params_file_node);
     classifier->Init();
 
-    string fileName = args.input_path + "/result.txt";
-    FILE *out = fopen(fileName.c_str(), "w");
-    if (out == NULL) {
-        cout << "Problems with creating output file\n";
-        cout << help;
-        return 1;
-    }
-
-    detect(classifier, args, out);
-
-    fclose(out);
+    detect(classifier, args);
     return 0;
 }
