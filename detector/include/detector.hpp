@@ -28,6 +28,14 @@ public:
 
 private:
     void Preprocessing(cv::Mat &img);
+#ifdef HAVE_MPI
+    void GetLayerWindowsNumber(std::vector<cv::Mat> &imgPyramid,
+            std::vector<int> &winNum);
+    void CreateParallelExecutionSchedule(std::vector<int> &winNum, 
+            std::vector<std::vector<int> > &levels, const int np);
+    void Detect(std::vector<cv::Mat> &imgPyramid,
+            std::vector<std::vector<int> > &levels);
+#endif
 
     std::shared_ptr<Classifier> classifier;
     cv::Size window_size;

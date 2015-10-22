@@ -6,6 +6,10 @@
 
 #include <iostream>
 
+#ifdef HAVE_MPI
+#include <mpi.h>
+#endif
+
 using namespace cv;
 using namespace std;
 
@@ -94,6 +98,20 @@ void Detector::Detect(Mat &layer, vector<int> &labels,
   rects.insert(rects.end(), layerRect.begin(), layerRect.end());
 }
 
+#ifdef HAVE_MPI
+void Detector::GetLayerWindowsNumber(std::vector<cv::Mat> &imgPyramid,
+        std::vector<int> &winNum)
+{}
+
+void Detector::CreateParallelExecutionSchedule(std::vector<int> &winNum,
+        vector<vector<int> > &levels, const int np)
+{}
+
+void Detector::Detect(std::vector<cv::Mat> &imgPyramid,
+        vector<vector<int> > &levels)
+{}
+#endif
+
 void Detector::DetectMultiScale(const Mat &img, vector<int> &labels,
         vector<double> &scores, vector<Rect> &rects,
         const float detectorThreshold, 
@@ -105,10 +123,21 @@ void Detector::DetectMultiScale(const Mat &img, vector<int> &labels,
     vector<float> scales;
     CreateImagePyramid(img, imgPyramid, scales);
 
-    //for every layer of pyramid
+#ifdef HAVE_MPI
+    int np;
+    MPI_Init(0, 0);
+    MPI_Comm_size(MPI_COMM_WORLD, &np);
+    vector<int> winNum;
+    vector<vector<int> > levels;
+    GetLayerWindowsNumber(imgPyramid, winNum);
+    CreateParallelExecutionSchedule(winNum, levels, np);
+    Detect(imgPyramid, levels);
+    MPI_Finalize();
+#else    
     for (uint i = 0; i < imgPyramid.size(); i++)
     {
         Detect(imgPyramid[i], labels, scores, rects, scales[i], 
           detectorThreshold, mergeRectThreshold);
     }
+#endif
 }
