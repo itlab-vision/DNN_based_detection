@@ -28,14 +28,11 @@ public:
 
 private:
     void Preprocessing(cv::Mat &img);
-#ifdef HAVE_MPI
+#if defined(HAVE_MPI) && defined(PAR_PYRAMID)
     void GetLayerWindowsNumber(std::vector<cv::Mat> &imgPyramid,
         std::vector<int> &winNum);
     void CreateParallelExecutionSchedule(std::vector<int> &winNum,
-        std::vector<std::vector<int> > &levels, const int np);
-    void CreateParallelExecutionSchedule(std::vector<int> &winNum, 
-            std::vector<std::vector<int> > &levels, std::vector<float> &scales,
-            const int np);
+        std::vector<std::vector<int> > &levels);    
     void Detect(std::vector<cv::Mat> &imgPyramid,
             std::vector<std::vector<int> > &levels,
             std::vector<float> &scales,

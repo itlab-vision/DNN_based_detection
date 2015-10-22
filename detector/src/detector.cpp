@@ -6,7 +6,7 @@
 
 #include <iostream>
 
-#ifdef HAVE_MPI
+#if defined(HAVE_MPI) && defined(PAR_PYRAMID)
 
 #include <mpi.h>
 #define MAX_BBOXES_NUMBER 1000
@@ -101,7 +101,7 @@ void Detector::Detect(Mat &layer, vector<int> &labels,
   rects.insert(rects.end(), layerRect.begin(), layerRect.end());
 }
 
-#ifdef HAVE_MPI
+#if defined(HAVE_MPI) && defined(PAR_PYRAMID)
 void Detector::GetLayerWindowsNumber(std::vector<cv::Mat> &imgPyramid,
         std::vector<int> &winNum)
 {
@@ -117,11 +117,12 @@ void Detector::GetLayerWindowsNumber(std::vector<cv::Mat> &imgPyramid,
 }
 
 void Detector::CreateParallelExecutionSchedule(std::vector<int> &winNum,
-        std::vector<std::vector<int> > &levels, const int np)
+        std::vector<std::vector<int> > &levels)
 {
     // sort by descending order
-    vector<int> indeces(winNum.size()), weights(np), disp(np);
-    for (int i = 0; i < indeces.size(); i++)
+    int kLevels = winNum.size(), np = levels.size();
+    vector<int> indeces(kLevels), weights(np), disp(np);
+    for (int i = 0; i < kLevels; i++)
     {
         indeces[i] = i;
     }
@@ -139,7 +140,7 @@ void Detector::CreateParallelExecutionSchedule(std::vector<int> &winNum,
         disp[i] = 0;
     }
     // distribute other layers
-    for (int i = np; i < levels.size(); ++i)
+    for (int i = np; i < kLevels; ++i)
     {
         for (int j = 0; j < np; j++)
         {
@@ -178,17 +179,18 @@ void Detector::Detect(std::vector<cv::Mat> &imgPyramid,
 {
     // process levels set to the particular process
     int np, rank;
-    MPI_Comm_size(MPI_COMM_WORLD, &np);
+    np = levels.size();
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     vector<int> procLevels = levels[rank];
+    int kLevels = procLevels.size();
     vector<int> procLabels;
     vector<double> procScores;
-    vector<Rect> procRects;
-    for (int i = 0; i < procLevels.size(); i++)
+    vector<Rect> procRects;    
+    for (int i = 0; i < kLevels; i++)
     {
         int levelId = procLevels[i];
         Detect(imgPyramid[levelId], procLabels, procScores, procRects,
-          scales[levelId], detectorThreshold, mergeRectThreshold);
+            scales[levelId], detectorThreshold, mergeRectThreshold);
     }
     // recieve results to process 0
     if (rank == 0)
@@ -214,7 +216,6 @@ void Detector::Detect(std::vector<cv::Mat> &imgPyramid,
             MPI_Get_count(&status, MPI_INT, &bboxesNum);
             childProcScores.resize(bboxesNum);
             
-            // Rect has 4 fields (x, y, width, height)
             bboxesNum = 0;
             vector<Rect> childProcRects(MAX_BBOXES_NUMBER);
             MPI_Recv(childProcRects.data(), MAX_BBOXES_NUMBER * sizeof(Rect) / sizeof(int),
@@ -230,8 +231,7 @@ void Detector::Detect(std::vector<cv::Mat> &imgPyramid,
     else
     {
         MPI_Send(procLabels.data(), procLabels.size(), MPI_INT, 0, 1, MPI_COMM_WORLD);
-        MPI_Send(procScores.data(), procScores.size(), MPI_DOUBLE, 0, 2, MPI_COMM_WORLD);
-        // Rect has 4 fields (x, y, width, height)
+        MPI_Send(procScores.data(), procScores.size(), MPI_DOUBLE, 0, 2, MPI_COMM_WORLD);        
         MPI_Send(procRects.data(), procRects.size() * sizeof(Rect) / sizeof(int), 
             MPI_INT, 0, 3, MPI_COMM_WORLD);
     }
@@ -245,7 +245,7 @@ void Detector::DetectMultiScale(const Mat &img, vector<int> &labels,
 {
     CV_Assert(scale > 1.0 && scale <= 2.0); 
 
-#ifdef HAVE_MPI
+#if defined(HAVE_MPI) && defined(PAR_PYRAMID)
     int np, argc;
     char **argv;
     MPI_Init(&argc, &argv);
@@ -258,8 +258,8 @@ void Detector::DetectMultiScale(const Mat &img, vector<int> &labels,
     vector<int> winNum;
     GetLayerWindowsNumber(imgPyramid, winNum);
     // 3. create schedule to send layers
-    vector<vector<int> > levels(imgPyramid.size());
-    CreateParallelExecutionSchedule(winNum, levels, np);
+    vector<vector<int> > levels(np);
+    CreateParallelExecutionSchedule(winNum, levels);
     // 4. send layers to child processes and detect  objects on the first layer
     Detect(imgPyramid, levels, scales, labels, scores, rects,
       detectorThreshold, mergeRectThreshold);    
