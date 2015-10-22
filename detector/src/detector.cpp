@@ -81,9 +81,9 @@ void Detector::Detect(Mat &layer, vector<int> &labels,
         scores.push_back(result.confidence);
         layerRect.push_back(
           Rect(cvRound(rect.x      * scaleFactor),
-          cvRound(rect.y      * scaleFactor),
-          cvRound(rect.width  * scaleFactor),
-          cvRound(rect.height * scaleFactor)) );
+               cvRound(rect.y      * scaleFactor),
+               cvRound(rect.width  * scaleFactor),
+               cvRound(rect.height * scaleFactor)) );
       }
     }
   }
