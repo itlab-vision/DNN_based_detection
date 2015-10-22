@@ -36,10 +36,6 @@ const char* help = "detector \"input/folder\"\n\
         \n";
 
 void detect(shared_ptr<Classifier> classifier, Args args, ofstream &out) {
-    vector<int> labels;
-    vector<Rect> rects;
-    vector<double> scores;
-
     FileNode params = args.params_file_node;
     int step = params["step"];
     float scale = params["scale"];
@@ -52,7 +48,10 @@ void detect(shared_ptr<Classifier> classifier, Args args, ofstream &out) {
     for (size_t i = 0; i < args.filenames.size(); i++) {
         Mat img = imread(args.filenames[i], cv::IMREAD_COLOR);
         cout << "Processing " << args.filenames[i] << endl;
-
+        
+        vector<int> labels;
+        vector<Rect> rects;
+        vector<double> scores;
         detector.DetectMultiScale(img, labels, scores, rects);
 
         out << args.filenames[i] << endl << rects.size() << endl;
@@ -60,10 +59,7 @@ void detect(shared_ptr<Classifier> classifier, Args args, ofstream &out) {
             out << rects[j].x << " " << rects[j].y << " "
                 << rects[j].width << " " << rects[j].height << " "
                 << scores[j] << " " << endl;
-        }
-        labels.clear();
-        scores.clear();
-        rects.clear();
+        }        
     }
 }
 
