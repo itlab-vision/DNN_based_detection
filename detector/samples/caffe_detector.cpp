@@ -1,12 +1,17 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <stdio.h>
 
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 
 #include "detector.hpp"
 #include "classifier_factory.hpp"
+
+#if defined(HAVE_MPI) && defined(PAR_SET_IMAGES)
+#include <mpi.h>
+#endif
 
 using namespace std;
 using cv::Rect;
@@ -35,7 +40,33 @@ const char* help = "detector \"input/folder\"\n\
     output of the program is file result.txt in input folder\n\
         \n";
 
-void detect(shared_ptr<Classifier> classifier, Args args, ofstream &out) {
+void detect(Detector &detector, std::string &fileName, FILE *out)
+{
+    Mat img = imread(fileName, cv::IMREAD_COLOR);
+    cout << "Processing " << fileName << endl;
+    
+    vector<int> labels;
+    vector<Rect> rects;
+    vector<double> scores;
+    detector.DetectMultiScale(img, labels, scores, rects);
+
+    string fileLine = fileName + "\n" + to_string(rects.size()) + "\n";
+    for (size_t j = 0; j < rects.size(); j++)
+    {
+        fileLine += to_string(rects[j].x) + " " + to_string(rects[j].y) + " "
+            + to_string(rects[j].width) + " " + to_string(rects[j].height) + " "
+            + to_string(scores[j]) + " \n";
+    }
+    fprintf(out, "%s", fileLine.c_str());
+}
+
+#if defined(HAVE_MPI) && defined(PAR_SET_IMAGES)
+void detect(shared_ptr<Classifier> classifier, Args args, FILE *out) 
+{
+    int argc, rank, np, fileStep, leftIdx, rigthIdx;
+    char **argv;
+    MPI_Init(&argc, &argv);
+
     FileNode params = args.params_file_node;
     int step = params["step"];
     float scale = params["scale"];
@@ -45,23 +76,37 @@ void detect(shared_ptr<Classifier> classifier, Args args, ofstream &out) {
     Detector detector(classifier, Size(227, 227),
                       step, step, scale, min_neighbs, group_rect);
 
-    for (size_t i = 0; i < args.filenames.size(); i++) {
-        Mat img = imread(args.filenames[i], cv::IMREAD_COLOR);
-        cout << "Processing " << args.filenames[i] << endl;
-        
-        vector<int> labels;
-        vector<Rect> rects;
-        vector<double> scores;
-        detector.DetectMultiScale(img, labels, scores, rects);
+    MPI_Comm_size(MPI_COMM_WORLD, &np);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-        out << args.filenames[i] << endl << rects.size() << endl;
-        for (size_t j = 0; j < rects.size(); j++) {
-            out << rects[j].x << " " << rects[j].y << " "
-                << rects[j].width << " " << rects[j].height << " "
-                << scores[j] << " " << endl;
-        }        
+    fileStep = args.filenames.size() / np;
+    leftIdx = rank * fileStep;
+    rigthIdx = min(rank * (fileStep + 1), (int)(args.filenames.size()));
+    for (int i = leftIdx; i < rigthIdx; i++)
+    {
+        detect(detector, args.filenames[i], out);
+    }
+
+    MPI_Finalize();
+}    
+#else
+void detect(shared_ptr<Classifier> classifier, Args args, FILE *out)
+{
+    FileNode params = args.params_file_node;
+    int step = params["step"];
+    float scale = params["scale"];
+    int min_neighbs = params["min_neighbs"];
+    int group_rect = params["group_rect"];
+
+    Detector detector(classifier, Size(227, 227),
+                      step, step, scale, min_neighbs, group_rect);
+
+    for (size_t i = 0; i < args.filenames.size(); i++)
+    {
+        detect(detector, args.filenames[i], out);
     }
 }
+#endif
 
 int main(int argc, char** argv) {
     if (argc < 2) {
@@ -96,8 +141,9 @@ int main(int argc, char** argv) {
     classifier->SetParams(args.params_file_node);
     classifier->Init();
 
-    ofstream out(args.input_path + "/result.txt");
-    if (!out.is_open()) {
+    string fileName = args.input_path + "/result.txt";
+    FILE *out = fopen(fileName.c_str(), "w");
+    if (out == NULL) {
         cout << "Problems with creating output file\n";
         cout << help;
         return 1;
@@ -105,6 +151,6 @@ int main(int argc, char** argv) {
 
     detect(classifier, args, out);
 
-    out.close();
+    fclose(out);
     return 0;
 }
