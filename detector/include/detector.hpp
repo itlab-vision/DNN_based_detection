@@ -34,7 +34,11 @@ private:
     void CreateParallelExecutionSchedule(std::vector<int> &winNum, 
             std::vector<std::vector<int> > &levels, const int np);
     void Detect(std::vector<cv::Mat> &imgPyramid,
-            std::vector<std::vector<int> > &levels);
+            std::vector<std::vector<int> > &levels,
+            std::vector<int> &labels,
+            std::vector<double> &scores, std::vector<cv::Rect> &rects,
+            const float detectorThreshold = 0.5f,
+            const double mergeRectThreshold = 0.2);
 #endif
 
     std::shared_ptr<Classifier> classifier;

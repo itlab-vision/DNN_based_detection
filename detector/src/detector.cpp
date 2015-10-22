@@ -101,11 +101,68 @@ void Detector::Detect(Mat &layer, vector<int> &labels,
 #ifdef HAVE_MPI
 void Detector::GetLayerWindowsNumber(std::vector<cv::Mat> &imgPyramid,
         std::vector<int> &winNum)
-{}
+{
+    winNum.clear();
+    int kLayers = imgPyramid.size();
+    for (int i = 0; i < kLayers; i++)
+    {       
+        int kWins = (imgPyramid[i].cols - window_size.width + 1) * 
+                    (imgPyramid[i].rows - window_size.height + 1) / 
+                    (dx * dy);
+        winNum.push_back(kWins);
+    }
+}
 
 void Detector::CreateParallelExecutionSchedule(std::vector<int> &winNum,
         vector<vector<int> > &levels, const int np)
-{}
+{
+    // sort by descending order
+    vector<int> indeces(winNum.size()), weights(np), disp(np);
+    for (int i = 0; i < indeces.size(); i++)
+    {
+        indeces[i] = i;
+    }
+    sort(indeces.begin(), indeces.end(),
+      [&winNum](size_t i1, size_t i2) { return winNum[i1] > winNum[i2] });
+    sort(winNum.begin(), winNum.end(), 
+      [](int a, int b) { return a > b; });
+    // bigest layers will be processed by different processes
+    for (int i = 0; i < np; i++)
+    {
+        levels[i].push_back(indeces[i]);
+        weights[i] = winNum[i];
+        disp[i] = 0;
+    }
+    // distribute other layers
+    for (int i = np; i < levels.size(); ++i)
+    {
+        for (int j = 0; j < np; j++)
+        {
+            // try to add the next layer to process j and compute variance
+            weights[j] += winNum[i];
+            int minValue = weights[0], maxValue = weights[0];
+            for (int k = 1; l < np; k++)
+            {
+                minValue = min(minValue, weights[k]);
+                maxValue = max(maxValue, weights[k]);
+            }
+            disp[j] = maxValue - minValue;
+            weights[j] -= winNum[i];
+        }
+        // choose the process provided minimum variance
+        int minValue = disp[0], argMin = 0;
+        for (int j = 1; j < np; j++)
+        {
+            if (disp[j] < minValue)
+            {
+                minValue = disp[j];
+                argMin = j;
+            }
+        }
+        // add index of the layer to the correspond process
+        levels[argMin].push_back(indeces[i]);
+    }    
+}
 
 void Detector::Detect(std::vector<cv::Mat> &imgPyramid,
         vector<vector<int> > &levels)
@@ -117,23 +174,30 @@ void Detector::DetectMultiScale(const Mat &img, vector<int> &labels,
         const float detectorThreshold, 
         const double mergeRectThreshold)
 {
-    CV_Assert(scale > 1.0 && scale <= 2.0);
+    CV_Assert(scale > 1.0 && scale <= 2.0); 
 
+#ifdef HAVE_MPI
+    int np;    
+    MPI_Init(0, 0);
+    MPI_Comm_size(MPI_COMM_WORLD, &np);    
+    // 1. create scale pyramid
     vector<Mat> imgPyramid;
     vector<float> scales;
     CreateImagePyramid(img, imgPyramid, scales);
-
-#ifdef HAVE_MPI
-    int np;
-    MPI_Init(0, 0);
-    MPI_Comm_size(MPI_COMM_WORLD, &np);
+    // 2. compute number of windows at each layer
     vector<int> winNum;
-    vector<vector<int> > levels;
     GetLayerWindowsNumber(imgPyramid, winNum);
+    // 3. create schedule to send layers
+    vector<vector<int> > levels(imgPyramid.size());
     CreateParallelExecutionSchedule(winNum, levels, np);
-    Detect(imgPyramid, levels);
+    // 4. send layers to child processes and detect  objects on the first layer
+    Detect(imgPyramid, levels, labels, scores, rects,
+      detectorThreshold, mergeRectThreshold);    
     MPI_Finalize();
-#else    
+#else
+    vector<Mat> imgPyramid;
+    vector<float> scales;
+    CreateImagePyramid(img, imgPyramid, scales);
     for (uint i = 0; i < imgPyramid.size(); i++)
     {
         Detect(imgPyramid[i], labels, scores, rects, scales[i], 
