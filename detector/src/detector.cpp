@@ -246,8 +246,9 @@ void Detector::DetectMultiScale(const Mat &img, vector<int> &labels,
     CV_Assert(scale > 1.0 && scale <= 2.0); 
 
 #ifdef HAVE_MPI
-    int np;    
-    MPI_Init(0, 0);
+    int np, argc;
+    char **argv;
+    MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &np);
     // 1. create scale pyramid
     vector<Mat> imgPyramid;
