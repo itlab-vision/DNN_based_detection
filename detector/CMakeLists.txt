@@ -103,12 +103,14 @@ endif()
 #----------------------------------------------------------------------------------#
 
 add_subdirectory(samples)
+add_subdirectory(gtest)
+add_subdirectory(test)
 
 #----------------------------------------------------------------------------------#
 message(STATUS ${PROJECT_NAME})
 message(STATUS "-------------------------------------------------------")
 message(STATUS "Caffe support     ${WITH_CAFFE}")
-message(STATUS "   CPY_ONLY:      ${WITH_CPU_ONLY}")
+message(STATUS "   CPU_ONLY:      ${WITH_CPU_ONLY}")
 message(STATUS "Torch support     ${WITH_TORCH}")
 message(STATUS "MPI support       ${WITH_MPI}")
 message(STATUS "   PAR_PYRAMID:   ${PAR_PYRAMID}")
