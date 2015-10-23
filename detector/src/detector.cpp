@@ -138,7 +138,7 @@ void Detector::CreateParallelExecutionSchedule(std::vector<int> &winNum,
       [](int a, int b) 
         { return a > b; });
     // bigest layers will be processed by different processes
-    if (kLevels < np)
+    if (kLevels <= np)
     {
         for (int i = 0; i < kLevels; i++)
         {
