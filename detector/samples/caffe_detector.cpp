@@ -113,17 +113,18 @@ void detect(Detector &detector, std::string &fileName, ofstream &out)
     {
         out << rects[j].x << " " << rects[j].y << " "
             << rects[j].width << " " << rects[j].height << " "
-            << scores[j]) << " " << endl;
+            << scores[j] << " " << endl;
     }
 }
 
 void detect(shared_ptr<Classifier> classifier, Args args)
 {
     ofstream out(args.input_path + "/result.txt");
-    if (!out.is_open()) {
+    if (!out.is_open())
+    {
         cout << "Problems with creating output file\n";
         cout << help;
-        return 1;
+        return;
     }
     FileNode params = args.params_file_node;
     int step = params["step"];
@@ -138,7 +139,7 @@ void detect(shared_ptr<Classifier> classifier, Args args)
     {
         detect(detector, args.filenames[i], out);
     }
-    fclose(out);
+    out.close();
 }
 #endif
 

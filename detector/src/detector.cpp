@@ -52,19 +52,24 @@ Detector::Detector(std::shared_ptr<Classifier> classifier_,
 void Detector::CreateImagePyramid(const cv::Mat &img, std::vector<Mat> &pyramid,
                                   std::vector<float> &scales)
 {
-    pyramid.clear();
-    pyramid.push_back(img);
-    Mat resizedImg;
     float scaleFactor = 1.0f;
-    while (img.cols > window_size.width && img.rows > window_size.height)
-    {
-        resize(img, resizedImg,
+    pyramid.clear();
+    pyramid.push_back(img.clone());
+    scales.push_back(scaleFactor);
+    Mat resizedImg;    
+    resize(img, resizedImg,
                Size((int)(img.cols / scale), (int)(img.rows / scale)),
                0, 0, INTER_LINEAR);
+    while (resizedImg.cols > window_size.width &&
+           resizedImg.rows > window_size.height)
+    {        
         pyramid.push_back(resizedImg.clone());
-        scales.push_back(scaleFactor);        
+        scales.push_back(scaleFactor);
         scaleFactor *= scale;
-    }    
+        resize(img, resizedImg,
+               Size((int)(img.cols / scaleFactor), (int)(img.rows / scaleFactor)),
+               0, 0, INTER_LINEAR);
+    }
 }
 
 void Detector::Detect(Mat &layer, vector<int> &labels,
