@@ -166,7 +166,7 @@ TEST(Detector, check_win_num)
     EXPECT_EQ(16, kWins);
 }
 
-TEST(Detector, check_size_of_levels_in_image_pyramid)
+TEST(Detector, check_number_of_levels_in_image_pyramid)
 {
     ClassifierFactory factory;
     std::shared_ptr<Classifier> classifier = factory.CreateClassifier(FAKE_CLASSIFIER);
