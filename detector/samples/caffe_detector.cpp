@@ -9,7 +9,7 @@
 #include "detector.hpp"
 #include "classifier_factory.hpp"
 
-#if defined(HAVE_MPI) && defined(PAR_SET_IMAGES)
+#if defined(HAVE_MPI)
 #include <mpi.h>
 #endif
 
@@ -101,7 +101,7 @@ void detect(shared_ptr<Classifier> classifier, Args args)
 #else
 
 void detect(Detector &detector, std::string &fileName, ofstream &out)
-{
+{    
     Mat img = imread(fileName, cv::IMREAD_COLOR);
     cout << "Processing " << fileName << endl;
     
@@ -110,6 +110,7 @@ void detect(Detector &detector, std::string &fileName, ofstream &out)
     vector<double> scores;
     detector.DetectMultiScale(img, labels, scores, rects);
 
+    // FIX: write to file on 0 process
     out << fileName << endl << rects.size() << endl;
     for (size_t j = 0; j < rects.size(); j++)
     {

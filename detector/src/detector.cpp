@@ -7,10 +7,8 @@
 #include <iostream>
 
 #if defined(HAVE_MPI) && defined(PAR_PYRAMID)
-
 #include <mpi.h>
 #define MAX_BBOXES_NUMBER 1000
-
 #endif
 
 using namespace cv;
@@ -83,7 +81,8 @@ void Detector::Detect(Mat &layer, vector<int> &labels,
             Mat window = layer(rect);
 
             Classifier::Result result = classifier->Classify(window);
-            if (fabs(result.confidence2) < detectorThreshold && result.label == 0)
+            // FIX: class label - 0
+            if (fabs(result.confidence) > detectorThreshold && result.label == 0)
             {
                 labels.push_back(result.label);
                 scores.push_back(result.confidence);
@@ -97,6 +96,7 @@ void Detector::Detect(Mat &layer, vector<int> &labels,
     }
     if (group_rect)
     {
+        // FIX: groupRectangkes doesn't modidficate labels and scores
         groupRectangles(layerRect, min_neighbours, mergeRectThreshold);
     }
     rects.insert(rects.end(), layerRect.begin(), layerRect.end());
@@ -197,10 +197,16 @@ void Detector::Detect(std::vector<cv::Mat> &imgPyramid,
     vector<Rect> procRects;    
     for (int i = 0; i < kLevels; i++)
     {
-        int levelId = procLevels[i];
+        int levelId = procLevels[i];        
         Detect(imgPyramid[levelId], procLabels, procScores, procRects,
             scales[levelId], detectorThreshold, mergeRectThreshold);
+        cout <<  "Process " << rank << ": " << endl 
+             << "\tLevelId: " <<  levelId << " (scale = " << scales[levelId]
+             << "), kLabels = " << procLabels.size()
+             << ", kScores = " << procScores.size()
+             << ", kRects =  " << procRects.size() << endl;
     }
+    MPI_Barrier(MPI_COMM_WORLD);
     // recieve results to process 0
     if (rank == 0)
     {
@@ -210,37 +216,39 @@ void Detector::Detect(std::vector<cv::Mat> &imgPyramid,
         for (int i = 1; i < np; i++)
         {
             int bboxesNum = 0;
-            vector<int> childProcLabels(MAX_BBOXES_NUMBER);       
+            vector<int> childProcLabels(MAX_BBOXES_NUMBER);
             MPI_Status status;
-            MPI_Recv(childProcLabels.data(), MAX_BBOXES_NUMBER, MPI_INT, i, 1,
-                MPI_COMM_WORLD, &status);
+            MPI_Recv(childProcLabels.data(), MAX_BBOXES_NUMBER, MPI_INT,
+                MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, &status);
             MPI_Get_count(&status, MPI_INT, &bboxesNum);
             childProcLabels.resize(bboxesNum);
 
-            
             bboxesNum = 0;
             vector<double> childProcScores(MAX_BBOXES_NUMBER);
-            MPI_Recv(childProcScores.data(), MAX_BBOXES_NUMBER, MPI_DOUBLE, i, 2,
-                MPI_COMM_WORLD, &status);
-            MPI_Get_count(&status, MPI_INT, &bboxesNum);
+            MPI_Recv(childProcScores.data(), MAX_BBOXES_NUMBER, MPI_DOUBLE,
+                MPI_ANY_SOURCE, 2, MPI_COMM_WORLD, &status);
+            MPI_Get_count(&status, MPI_DOUBLE, &bboxesNum);
             childProcScores.resize(bboxesNum);
             
             bboxesNum = 0;
             vector<Rect> childProcRects(MAX_BBOXES_NUMBER);
             MPI_Recv(childProcRects.data(), MAX_BBOXES_NUMBER * sizeof(Rect) / sizeof(int),
-                MPI_INT, i, 3, MPI_COMM_WORLD, &status);
+                MPI_INT, MPI_ANY_SOURCE, 3, MPI_COMM_WORLD, &status);
             MPI_Get_count(&status, MPI_INT, &bboxesNum);
-            childProcLabels.resize(bboxesNum);
-
-            labels.insert(labels.end(), childProcLabels.begin(), childProcLabels.end());
-            scores.insert(scores.end(), childProcScores.begin(), childProcScores.end());
-            rects.insert(rects.end(), childProcRects.begin(), childProcRects.end());
+            childProcLabels.resize(bboxesNum / 4);
+            
+            bboxesNum /= 4;
+            labels.insert(labels.end(), childProcLabels.begin(), childProcLabels.begin() + bboxesNum);
+            scores.insert(scores.end(), childProcScores.begin(), childProcScores.begin() + bboxesNum);
+            rects.insert(rects.end(), childProcRects.begin(), childProcRects.begin() + bboxesNum);            
         }        
     }
     else
-    {
-        MPI_Send(procLabels.data(), procLabels.size(), MPI_INT, 0, 1, MPI_COMM_WORLD);
-        MPI_Send(procScores.data(), procScores.size(), MPI_DOUBLE, 0, 2, MPI_COMM_WORLD);        
+    {        
+        MPI_Send(procLabels.data(), procRects.size(), MPI_INT, 0, 1, MPI_COMM_WORLD);
+        
+        MPI_Send(procScores.data(), procRects.size(), MPI_DOUBLE, 0, 2, MPI_COMM_WORLD);        
+        
         MPI_Send(procRects.data(), procRects.size() * sizeof(Rect) / sizeof(int), 
             MPI_INT, 0, 3, MPI_COMM_WORLD);
     }
