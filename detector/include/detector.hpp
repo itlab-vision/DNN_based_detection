@@ -26,7 +26,7 @@ public:
     void CreateImagePyramid(const cv::Mat &img, std::vector<cv::Mat> &pyramid,
                             std::vector<float> &scales);
 
-private:
+protected:
     void Preprocessing(cv::Mat &img);
 #if defined(HAVE_MPI) && defined(PAR_PYRAMID)
     void GetLayerWindowsNumber(std::vector<cv::Mat> &imgPyramid,
