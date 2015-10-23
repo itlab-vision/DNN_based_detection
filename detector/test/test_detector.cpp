@@ -165,3 +165,23 @@ TEST(Detector, check_win_num)
     int kWins = (kCols - winWidth + 1) * (kRows - winHeight + 1) / (dx * dy);
     EXPECT_EQ(16, kWins);
 }
+
+TEST(Detector, check_size_of_levels_in_image_pyramid)
+{
+    ClassifierFactory factory;
+    std::shared_ptr<Classifier> classifier = factory.CreateClassifier(FAKE_CLASSIFIER);
+    cv::Size window_size(227, 227);
+    double scale = 1.3;
+    int min_neighbours = 3, dx = 1, dy = 1;
+    bool group_rect = true;
+    Detector detector(classifier, window_size, dx, dy,
+        scale, min_neighbours, group_rect);
+
+    cv::Mat img(363, 450, CV_8UC3);
+    std::vector<cv::Mat> imgPyramid;
+    std::vector<float> scales;
+    detector.CreateImagePyramid(img, imgPyramid, scales);
+    
+    EXPECT_EQ(2, imgPyramid.size());
+    EXPECT_EQ(2, scales.size());
+}
