@@ -78,32 +78,32 @@ void Detector::Detect(Mat &layer, vector<int> &labels,
         const float detectorThreshold, 
         const double mergeRectThreshold)
 {
-  vector<Rect> layerRect;
-  for (int y = 0; y < layer.rows - window_size.height + 1; y += dy)
-  {
-    for (int x = 0; x < layer.cols - window_size.width + 1; x += dx)
+    vector<Rect> layerRect;
+    for (int y = 0; y < layer.rows - window_size.height + 1; y += dy)
     {
-      Rect rect(x, y, window_size.width, window_size.height);
-      Mat window = layer(rect);
+        for (int x = 0; x < layer.cols - window_size.width + 1; x += dx)
+        {
+            Rect rect(x, y, window_size.width, window_size.height);
+            Mat window = layer(rect);
 
-      Classifier::Result result = classifier->Classify(window);
-      if (fabs(result.confidence) < detectorThreshold && result.label == 1)
-      {
-        labels.push_back(result.label);
-        scores.push_back(result.confidence);
-        layerRect.push_back(
-          Rect(cvRound(rect.x      * scaleFactor),
-               cvRound(rect.y      * scaleFactor),
-               cvRound(rect.width  * scaleFactor),
-               cvRound(rect.height * scaleFactor)) );
-      }
+            Classifier::Result result = classifier->Classify(window);
+            if (fabs(result.confidence2) < detectorThreshold && result.label == 0)
+            {
+                labels.push_back(result.label);
+                scores.push_back(result.confidence);
+                layerRect.push_back(
+                    Rect(cvRound(rect.x      * scaleFactor),
+                         cvRound(rect.y      * scaleFactor),
+                         cvRound(rect.width  * scaleFactor),
+                         cvRound(rect.height * scaleFactor)) );
+            }
+        }
     }
-  }
-  if (group_rect)
-  {
-    groupRectangles(layerRect, min_neighbours, mergeRectThreshold);
-  }
-  rects.insert(rects.end(), layerRect.begin(), layerRect.end());
+    if (group_rect)
+    {
+        groupRectangles(layerRect, min_neighbours, mergeRectThreshold);
+    }
+    rects.insert(rects.end(), layerRect.begin(), layerRect.end());
 }
 
 #if defined(HAVE_MPI) && defined(PAR_PYRAMID)
@@ -138,6 +138,14 @@ void Detector::CreateParallelExecutionSchedule(std::vector<int> &winNum,
       [](int a, int b) 
         { return a > b; });
     // bigest layers will be processed by different processes
+    if (kLevels < np)
+    {
+        for (int i = 0; i < kLevels; i++)
+        {
+            levels[i].push_back(indeces[i]);
+        }
+        return;
+    }
     for (int i = 0; i < np; i++)
     {
         levels[i].push_back(indeces[i]);

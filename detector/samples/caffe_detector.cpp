@@ -89,8 +89,10 @@ void detect(shared_ptr<Classifier> classifier, Args args)
     string outFileName = args.input_path + "/result.txt";
     MPI_File_open(MPI_COMM_WORLD, (char *)outFileName.c_str(),
         MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &file);
-    MPI_Offset offset = sizeof(fileLine);
-    MPI_File_seek(file, offset, MPI_SEEK_SET);
+    MPI_File_set_view(file, 0,  MPI_CHAR, localarray, 
+        "native", MPI_INFO_NULL);
+    // MPI_Offset offset = sizeof(fileLine);
+    // MPI_File_seek(file, offset, MPI_SEEK_SET);
     MPI_File_write(file, (void *)(fileLine.c_str()), sizeof(char), MPI_CHAR, &status);
     MPI_File_close(&file);
     MPI_Finalize();
@@ -143,7 +145,8 @@ void detect(shared_ptr<Classifier> classifier, Args args)
 }
 #endif
 
-int main(int argc, char** argv) {
+int main(int argc, char** argv)
+{
     if (argc < 2) {
         cout << "Too few arguments\n" << help;
         return 1;
@@ -158,14 +161,16 @@ int main(int argc, char** argv) {
     ifstream content_annot(annot);
     FileStorage fs(config, FileStorage::READ);
 
-    if (!content_annot.is_open() || !fs.isOpened()) {
+    if (!content_annot.is_open() || !fs.isOpened())
+    {
         cout << "Cannot find or open input files\n";
         cout << help;
         return 1;
     }
 
     std::string s;
-    while (std::getline(content_annot, s)) {
+    while (std::getline(content_annot, s))
+    {
         args.filenames.push_back(s);
     }
 
