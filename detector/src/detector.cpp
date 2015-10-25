@@ -219,24 +219,24 @@ void Detector::Detect(std::vector<cv::Mat> &imgPyramid,
             vector<int> childProcLabels(MAX_BBOXES_NUMBER);
             MPI_Status status;
             MPI_Recv(childProcLabels.data(), MAX_BBOXES_NUMBER, MPI_INT,
-                MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, &status);
+                i, 1, MPI_COMM_WORLD, &status);
             MPI_Get_count(&status, MPI_INT, &bboxesNum);
             childProcLabels.resize(bboxesNum);
 
             bboxesNum = 0;
             vector<double> childProcScores(MAX_BBOXES_NUMBER);
             MPI_Recv(childProcScores.data(), MAX_BBOXES_NUMBER, MPI_DOUBLE,
-                MPI_ANY_SOURCE, 2, MPI_COMM_WORLD, &status);
+                i, 2, MPI_COMM_WORLD, &status);
             MPI_Get_count(&status, MPI_DOUBLE, &bboxesNum);
             childProcScores.resize(bboxesNum);
             
             bboxesNum = 0;
             vector<Rect> childProcRects(MAX_BBOXES_NUMBER);
             MPI_Recv(childProcRects.data(), MAX_BBOXES_NUMBER * sizeof(Rect) / sizeof(int),
-                MPI_INT, MPI_ANY_SOURCE, 3, MPI_COMM_WORLD, &status);
+                MPI_INT, i, 3, MPI_COMM_WORLD, &status);
             MPI_Get_count(&status, MPI_INT, &bboxesNum);
             childProcLabels.resize(bboxesNum / 4);
-            
+
             bboxesNum /= 4;
             labels.insert(labels.end(), childProcLabels.begin(), childProcLabels.begin() + bboxesNum);
             scores.insert(scores.end(), childProcScores.begin(), childProcScores.begin() + bboxesNum);
@@ -263,9 +263,7 @@ void Detector::DetectMultiScale(const Mat &img, vector<int> &labels,
     CV_Assert(scale > 1.0 && scale <= 2.0); 
 
 #if defined(HAVE_MPI) && defined(PAR_PYRAMID)
-    int np, argc;
-    char **argv;
-    MPI_Init(&argc, &argv);
+    int np;
     MPI_Comm_size(MPI_COMM_WORLD, &np);
     // 1. create scale pyramid
     vector<Mat> imgPyramid;
@@ -279,8 +277,7 @@ void Detector::DetectMultiScale(const Mat &img, vector<int> &labels,
     CreateParallelExecutionSchedule(winNum, levels);
     // 4. send layers to child processes and detect  objects on the first layer
     Detect(imgPyramid, levels, scales, labels, scores, rects,
-      detectorThreshold, mergeRectThreshold);    
-    MPI_Finalize();
+      detectorThreshold, mergeRectThreshold);
 #else
     vector<Mat> imgPyramid;
     vector<float> scales;

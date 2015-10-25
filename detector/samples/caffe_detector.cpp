@@ -100,7 +100,7 @@ void detect(shared_ptr<Classifier> classifier, Args args)
 
 #else
 
-void detect(Detector &detector, std::string &fileName, ofstream &out)
+void detect(Detector &detector, std::string &fileName, std::string &outFileName)
 {    
     Mat img = imread(fileName, cv::IMREAD_COLOR);
     cout << "Processing " << fileName << endl;
@@ -108,27 +108,47 @@ void detect(Detector &detector, std::string &fileName, ofstream &out)
     vector<int> labels;
     vector<Rect> rects;
     vector<double> scores;
+
+#if defined(HAVE_MPI) && defined(PAR_PYRAMID)
+    int argc;
+    char **argv;
+    MPI_Init(&argc, &argv);
+#endif
+
     detector.DetectMultiScale(img, labels, scores, rects);
 
-    // FIX: write to file on 0 process
-    out << fileName << endl << rects.size() << endl;
-    for (size_t j = 0; j < rects.size(); j++)
+    // write to file on 0 process
+#if defined(HAVE_MPI) && defined(PAR_PYRAMID)
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    if (rank == 0)
+#endif
     {
-        out << rects[j].x << " " << rects[j].y << " "
-            << rects[j].width << " " << rects[j].height << " "
-            << scores[j] << " " << endl;
+        ofstream out(outFileName);
+        if (!out.is_open())
+        {
+            cout << "Problems with creating output file\n";
+            cout << help;
+            return;
+        }
+        out << fileName << endl << rects.size() << endl;
+        for (size_t j = 0; j < rects.size(); j++)
+        {
+            out << rects[j].x << " " << rects[j].y << " "
+                << rects[j].width << " " << rects[j].height << " "
+                << scores[j] << " " << endl;
+        }
+        out.close();
     }
+#if defined(HAVE_MPI) && defined(PAR_PYRAMID)
+    MPI_Finalize();
+#endif
 }
 
 void detect(shared_ptr<Classifier> classifier, Args args)
 {
-    ofstream out(args.input_path + "/result.txt");
-    if (!out.is_open())
-    {
-        cout << "Problems with creating output file\n";
-        cout << help;
-        return;
-    }
+    std::string outFileName = args.input_path + "/result.txt";
+    
     FileNode params = args.params_file_node;
     int step = params["step"];
     float scale = params["scale"];
@@ -140,9 +160,8 @@ void detect(shared_ptr<Classifier> classifier, Args args)
 
     for (size_t i = 0; i < args.filenames.size(); i++)
     {
-        detect(detector, args.filenames[i], out);
-    }
-    out.close();
+        detect(detector, args.filenames[i], outFileName);
+    }    
 }
 #endif
 
