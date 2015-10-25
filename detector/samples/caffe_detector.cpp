@@ -43,6 +43,8 @@ const char* help = "detector \"input/folder\"\n\
 
 #if defined(HAVE_MPI) && defined(PAR_SET_IMAGES)
 
+#define MAX_LINE_LEN 112
+
 void detect(shared_ptr<Classifier> classifier, Args args)
 {
     int argc, rank, np, fileStep, leftIdx, rigthIdx;
@@ -63,14 +65,14 @@ void detect(shared_ptr<Classifier> classifier, Args args)
     MPI_Comm_size(MPI_COMM_WORLD, &np);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    fileStep = args.filenames.size() / np;
+    fileStep = (args.filenames.size() + np - 1) / np;
     leftIdx = rank * fileStep;
-    rigthIdx = min(rank * (fileStep + 1), (int)(args.filenames.size()));    
+    rigthIdx = min((rank + 1) * fileStep, (int)(args.filenames.size()));    
     string fileLine = "";
     for (int i = leftIdx; i < rigthIdx; i++)
     {
         std::string fileName = args.filenames[i];
-        Mat img = imread(fileName, cv::IMREAD_COLOR);
+        Mat img = imread(fileName, cv::IMREAD_COLOR);        
         cout << "Processing " << fileName << endl;
     
         vector<int> labels;
@@ -86,17 +88,13 @@ void detect(shared_ptr<Classifier> classifier, Args args)
                 + to_string(scores[j]) + " \n";
         }
     }
-    string outFileName = args.input_path + "/result.txt";
+    std::string outFileName = args.input_path + "/result.txt";
     MPI_File_open(MPI_COMM_WORLD, (char *)outFileName.c_str(),
-        MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &file);
-    MPI_File_set_view(file, 0,  MPI_CHAR, localarray, 
-        "native", MPI_INFO_NULL);
-    // MPI_Offset offset = sizeof(fileLine);
-    // MPI_File_seek(file, offset, MPI_SEEK_SET);
-    MPI_File_write(file, (void *)(fileLine.c_str()), sizeof(char), MPI_CHAR, &status);
+        MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &file);
+    MPI_File_write_ordered(file, (void *)fileLine.c_str(), fileLine.length(), MPI_CHAR, &status);
     MPI_File_close(&file);
     MPI_Finalize();
-}    
+}
 
 #else
 
