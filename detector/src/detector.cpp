@@ -53,7 +53,8 @@ void Detector::CreateImagePyramid(const cv::Mat &img, std::vector<Mat> &pyramid,
     pyramid.clear();    
     Mat resizedImg;
     img.copyTo(resizedImg);
-    float scaleFactor = 1.0f;    
+    float scaleFactor = 1.0f;
+    // FIX: need to increase image size to detect small faces
     while (resizedImg.cols >= window_size.width &&
            resizedImg.rows >= window_size.height)
     {

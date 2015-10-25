@@ -43,8 +43,6 @@ const char* help = "detector \"input/folder\"\n\
 
 #if defined(HAVE_MPI) && defined(PAR_SET_IMAGES)
 
-#define MAX_LINE_LEN 112
-
 void detect(shared_ptr<Classifier> classifier, Args args)
 {
     int argc, rank, np, fileStep, leftIdx, rigthIdx;
