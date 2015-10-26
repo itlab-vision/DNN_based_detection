@@ -3,6 +3,7 @@
 
 #include <gtest.h>
 #include <opencv2/core/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 #include <vector>
 #include <memory>
@@ -184,4 +185,53 @@ TEST(Detector, check_number_of_levels_in_image_pyramid)
     
     EXPECT_EQ(2, imgPyramid.size());
     EXPECT_EQ(2, scales.size());
+}
+
+TEST(Detector, check_image_pyramid_algorithm)
+{
+    cv::Size maxWinSize(227, 227), minWinSize(60, 60);
+    int rows = 363, cols = 450;
+    int kPyramidLevels = 11;
+
+    std::vector<cv::Mat> pyramid;
+    std::vector<float> scales;    
+    int kLevels = 0;
+    float scale = powf(((float)maxWinSize.width) / ((float)minWinSize.width), 
+                       1.0f / ((float)kPyramidLevels - 1.0f));
+    std::cout << "scale = " << scale << std::endl;
+    cv::Mat img = cv::Mat::zeros(rows, cols, CV_8UC3), resizedImg;
+
+    img.copyTo(resizedImg);
+    float scaleFactor = 1.0f;
+    // decrease image size = increase window size
+    while (resizedImg.cols >= maxWinSize.width &&
+           resizedImg.rows >= maxWinSize.height)
+    {
+        pyramid.push_back(resizedImg.clone());
+        scales.push_back(scaleFactor);
+        scaleFactor /= scale;        
+        cv::resize(img, resizedImg,
+               cv::Size((int)(img.cols * scaleFactor), (int)(img.rows * scaleFactor)),
+               0, 0, cv::INTER_LINEAR);
+        kLevels++;
+    }
+    // increase image size = decrease window size
+    scaleFactor = 1.0f;
+    while (kLevels < kPyramidLevels)
+    {
+        scaleFactor *= scale;
+        cv::resize(img, resizedImg,
+               cv::Size((int)(img.cols * scaleFactor), (int)(img.rows * scaleFactor)),
+               0, 0, cv::INTER_LINEAR);
+        pyramid.push_back(resizedImg.clone());
+        scales.push_back(scaleFactor);
+        kLevels++;
+    }    
+
+    for (int i = 0; i < kLevels; i++)
+    {
+        std::cout << pyramid[i].rows << "\t"
+                  << pyramid[i].cols << "\t"
+                  << scales[i] << std::endl;
+    }
 }

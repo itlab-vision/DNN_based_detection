@@ -50,20 +50,41 @@ Detector::Detector(std::shared_ptr<Classifier> classifier_,
 void Detector::CreateImagePyramid(const cv::Mat &img, std::vector<Mat> &pyramid,
                                   std::vector<float> &scales)
 {
+    cv::Size maxWinSize(227, 227), minWinSize(100, 100);
+    int kPyramidLevels = 3;
+
     pyramid.clear();    
+    int kLevels = 0;
+    float scale = powf(((float)maxWinSize.width) / ((float)minWinSize.width), 
+                       1.0f / ((float)kPyramidLevels - 1.0f));
+    cout << scale << endl;
+
     Mat resizedImg;
     img.copyTo(resizedImg);
     float scaleFactor = 1.0f;
-    // FIX: need to increase image size to detect small faces
-    while (resizedImg.cols >= window_size.width &&
-           resizedImg.rows >= window_size.height)
+    // decrease image size = increase window size
+    while (resizedImg.cols >= maxWinSize.width &&
+           resizedImg.rows >= maxWinSize.height)
     {
         pyramid.push_back(resizedImg.clone());
         scales.push_back(scaleFactor);
+        scaleFactor /= scale;        
+        resize(img, resizedImg,
+               Size((int)(img.cols * scaleFactor), (int)(img.rows * scaleFactor)),
+               0, 0, INTER_LINEAR);
+        kLevels++;
+    }
+    // increase image size = decrease window size
+    scaleFactor = 1.0f;
+    while (kLevels < kPyramidLevels)
+    {
         scaleFactor *= scale;
         resize(img, resizedImg,
-               Size((int)(img.cols / scaleFactor), (int)(img.rows / scaleFactor)),
+               Size((int)(img.cols * scaleFactor), (int)(img.rows * scaleFactor)),
                0, 0, INTER_LINEAR);
+        pyramid.push_back(resizedImg.clone());
+        scales.push_back(scaleFactor);
+        kLevels++;
     }
 }
 
@@ -87,11 +108,22 @@ void Detector::Detect(Mat &layer, vector<int> &labels,
             {
                 labels.push_back(result.label);
                 scores.push_back(result.confidence);
-                layerRect.push_back(
-                    Rect(cvRound(rect.x      * scaleFactor),
-                         cvRound(rect.y      * scaleFactor),
-                         cvRound(rect.width  * scaleFactor),
-                         cvRound(rect.height * scaleFactor)) );
+                if (scaleFactor < 1.0f)
+                {
+                    layerRect.push_back(
+                        Rect(cvRound(rect.x      * scaleFactor),
+                             cvRound(rect.y      * scaleFactor),
+                             cvRound(rect.width  * scaleFactor),
+                             cvRound(rect.height * scaleFactor)) );
+                }
+                else
+                {
+                    layerRect.push_back(
+                        Rect(cvRound(rect.x      / scaleFactor),
+                             cvRound(rect.y      / scaleFactor),
+                             cvRound(rect.width  / scaleFactor),
+                             cvRound(rect.height / scaleFactor)) );
+                }
             }
         }
     }
@@ -285,6 +317,7 @@ void Detector::DetectMultiScale(const Mat &img, vector<int> &labels,
     CreateImagePyramid(img, imgPyramid, scales);
     for (uint i = 0; i < imgPyramid.size(); i++)
     {
+        cout << "Process level " << i << ", scale factor equals " << scales[i] << endl;
         Detect(imgPyramid[i], labels, scores, rects, scales[i], 
           detectorThreshold, mergeRectThreshold);
     }
