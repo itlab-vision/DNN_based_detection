@@ -11,8 +11,9 @@
 class Detector
 {
 public:
-    Detector(std::shared_ptr<Classifier> classifier, cv::Size window_size,
-             int dx, int dy, double scale,
+    Detector(std::shared_ptr<Classifier> classifier,
+             cv::Size max_window_size, cv::Size min_window_size,
+             int kPyramidLevels, int dx, int dy,
              int min_neighbours, bool group_rect);
     void Detect(cv::Mat &layer, std::vector<int> &labels,
             std::vector<double> &scores, std::vector<cv::Rect> &rects,
@@ -43,10 +44,11 @@ protected:
 #endif
 
     std::shared_ptr<Classifier> classifier;
-    cv::Size window_size;
+    cv::Size max_window_size;
+    cv::Size min_window_size;
+    int kPyramidLevels;
     int dx;
     int dy;
-    double scale;
     int min_neighbours;
     bool group_rect;
 };

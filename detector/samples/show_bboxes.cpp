@@ -24,9 +24,9 @@ int main(int argc, char **argv)
         cout << "Error: file was not opened." << endl;
         return 0;
     }
+    
     string imgName;
     file >> imgName;
-    //std::getline( file, imgName );
     cout << imgName << endl;
     Mat img = imread(imgName, 1);
     int kBboxes;
@@ -38,10 +38,11 @@ int main(int argc, char **argv)
         file >> bbox.x >> bbox.y >> bbox.width >> bbox.height >> score;
         rectangle(img, bbox, Scalar(255, 0, 0), 2);
     }
-    file.close();
-
     namedWindow("Bounding boxes");
     imshow("Bounding boxes", img);
     waitKey();
+
+    file.close();
+    
     return 1;
 }

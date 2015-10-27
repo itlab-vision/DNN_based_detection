@@ -35,14 +35,15 @@ void Detector::Preprocessing(Mat &img)
 }
 
 Detector::Detector(std::shared_ptr<Classifier> classifier_,
-                   cv::Size window_size_, int dx_ = 1, int dy_ = 1,
-                   double scale_ = 1.2, int min_neighbours_ = 3,
-                   bool group_rect_ = false)
+             cv::Size max_window_size_, cv::Size min_window_size_,
+             int kPyramidLevels_, int dx_ = 1, int dy_ = 1,
+             int min_neighbours_ = 3, bool group_rect_ = false)
     : classifier(classifier_),
-      window_size(window_size_),
+      max_window_size(max_window_size_),
+      min_window_size(min_window_size_),
+      kPyramidLevels(kPyramidLevels_),
       dx(dx_),
       dy(dy_),
-      scale(scale_),
       min_neighbours(min_neighbours_),
       group_rect(group_rect_)
 {}
@@ -50,12 +51,9 @@ Detector::Detector(std::shared_ptr<Classifier> classifier_,
 void Detector::CreateImagePyramid(const cv::Mat &img, std::vector<Mat> &pyramid,
                                   std::vector<float> &scales)
 {
-    cv::Size maxWinSize(227, 227), minWinSize(100, 100);
-    int kPyramidLevels = 3;
-
     pyramid.clear();    
     int kLevels = 0;
-    float scale = powf(((float)maxWinSize.width) / ((float)minWinSize.width), 
+    float scale = powf(((float)max_window_size.width) / ((float)min_window_size.width), 
                        1.0f / ((float)kPyramidLevels - 1.0f));
     cout << scale << endl;
 
@@ -63,8 +61,8 @@ void Detector::CreateImagePyramid(const cv::Mat &img, std::vector<Mat> &pyramid,
     img.copyTo(resizedImg);
     float scaleFactor = 1.0f;
     // decrease image size = increase window size
-    while (resizedImg.cols >= maxWinSize.width &&
-           resizedImg.rows >= maxWinSize.height)
+    while (resizedImg.cols >= max_window_size.width &&
+           resizedImg.rows >= max_window_size.height)
     {
         pyramid.push_back(resizedImg.clone());
         scales.push_back(scaleFactor);
@@ -95,11 +93,11 @@ void Detector::Detect(Mat &layer, vector<int> &labels,
         const double mergeRectThreshold)
 {
     vector<Rect> layerRect;
-    for (int y = 0; y < layer.rows - window_size.height + 1; y += dy)
+    for (int y = 0; y < layer.rows - max_window_size.height + 1; y += dy)
     {
-        for (int x = 0; x < layer.cols - window_size.width + 1; x += dx)
+        for (int x = 0; x < layer.cols - max_window_size.width + 1; x += dx)
         {
-            Rect rect(x, y, window_size.width, window_size.height);
+            Rect rect(x, y, max_window_size.width, max_window_size.height);
             Mat window = layer(rect);
 
             Classifier::Result result = classifier->Classify(window);
@@ -143,8 +141,8 @@ void Detector::GetLayerWindowsNumber(std::vector<cv::Mat> &imgPyramid,
     int kLayers = imgPyramid.size();
     for (int i = 0; i < kLayers; i++)
     {       
-        int kWins = (imgPyramid[i].cols - window_size.width + 1) * 
-                    (imgPyramid[i].rows - window_size.height + 1) / 
+        int kWins = (imgPyramid[i].cols - max_window_size.width + 1) * 
+                    (imgPyramid[i].rows - max_window_size.height + 1) / 
                     (dx * dy);
         winNum.push_back(kWins);
     }
@@ -293,8 +291,6 @@ void Detector::DetectMultiScale(const Mat &img, vector<int> &labels,
         const float detectorThreshold, 
         const double mergeRectThreshold)
 {
-    CV_Assert(scale > 1.0 && scale <= 2.0); 
-
 #if defined(HAVE_MPI) && defined(PAR_PYRAMID)
     int np;
     MPI_Comm_size(MPI_COMM_WORLD, &np);

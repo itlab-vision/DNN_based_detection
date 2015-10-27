@@ -14,11 +14,11 @@ class TestableDetector : public Detector
 {
 public:
     TestableDetector(std::shared_ptr<Classifier> classifier,
-            cv::Size window_size,
-            int dx, int dy, double scale,
-            int min_neighbours, bool group_rect) :
-        Detector(classifier, window_size, dx, dy, scale,
-            min_neighbours, group_rect)
+             cv::Size max_window_size, cv::Size min_window_size,
+             int kPyramidLevels, int dx, int dy,
+             int min_neighbours, bool group_rect) :
+        Detector(classifier, max_window_size, min_window_size, kPyramidLevels,
+            dx, dy, min_neighbours, group_rect)
     { }
     using Detector::GetLayerWindowsNumber;
     using Detector::CreateParallelExecutionSchedule;
@@ -28,12 +28,11 @@ TEST(Detector, check_correctness_number_of_wins_for_empty_img_pyramid)
 {
     ClassifierFactory factory;
     std::shared_ptr<Classifier> classifier = factory.CreateClassifier(FAKE_CLASSIFIER);
-    cv::Size window_size(3, 3);
-    double scale = 1.2;
-    int min_neighbours = 3, dx = 1, dy = 1;
+    cv::Size max_window_size(3, 3), min_window_size(2, 2);
+    int min_neighbours = 3, dx = 1, dy = 1, kPyramidLevels = 2;
     bool group_rect = true;
-    TestableDetector detector(classifier, window_size, dx, dy,
-        scale, min_neighbours, group_rect);
+    TestableDetector detector(classifier, max_window_size, min_window_size,
+        kPyramidLevels, dx, dy, min_neighbours, group_rect);
     
     std::vector<int> winNums;
     std::vector<cv::Mat> imgPyramid;
@@ -46,12 +45,11 @@ TEST(Detector, check_correctness_number_of_wins_for_non_empty_img_pyramid)
 {
     ClassifierFactory factory;
     std::shared_ptr<Classifier> classifier = factory.CreateClassifier(FAKE_CLASSIFIER);
-    cv::Size window_size(3, 3);
-    double scale = 1.2;
-    int min_neighbours = 3, dx = 1, dy = 1;
+    cv::Size max_window_size(3, 3), min_window_size(2, 2);
+    int min_neighbours = 3, dx = 1, dy = 1, kPyramidLevels = 2;
     bool group_rect = true;
-    TestableDetector detector(classifier, window_size, dx, dy,
-        scale, min_neighbours, group_rect);
+    TestableDetector detector(classifier, max_window_size, min_window_size,
+        kPyramidLevels, dx, dy, min_neighbours, group_rect);
     
     std::vector<int> winNums;
     std::vector<cv::Mat> imgPyramid;
@@ -68,12 +66,11 @@ TEST(Detector, check_number_of_scales_in_schedule_when_nscales_less_than_np)
 {
     ClassifierFactory factory;
     std::shared_ptr<Classifier> classifier = factory.CreateClassifier(FAKE_CLASSIFIER);
-    cv::Size window_size(3, 3);
-    double scale = 1.2;
-    int min_neighbours = 3, dx = 1, dy = 1;
+    cv::Size max_window_size(3, 3), min_window_size(2, 2);
+    int min_neighbours = 3, dx = 1, dy = 1, kPyramidLevels = 2;
     bool group_rect = true;
-    TestableDetector detector(classifier, window_size, dx, dy,
-        scale, min_neighbours, group_rect);
+    TestableDetector detector(classifier, max_window_size, min_window_size,
+        kPyramidLevels, dx, dy, min_neighbours, group_rect);
     
     std::vector<int> winNums;
     std::vector<cv::Mat> imgPyramid;
@@ -96,12 +93,11 @@ TEST(Detector, check_number_of_scales_in_schedule_when_nscales_more_than_np)
 {
     ClassifierFactory factory;
     std::shared_ptr<Classifier> classifier = factory.CreateClassifier(FAKE_CLASSIFIER);
-    cv::Size window_size(3, 3);
-    double scale = 1.2;
-    int min_neighbours = 3, dx = 1, dy = 1;
+    cv::Size max_window_size(3, 3), min_window_size(2, 2);
+    int min_neighbours = 3, dx = 1, dy = 1, kPyramidLevels = 2;
     bool group_rect = true;
-    TestableDetector detector(classifier, window_size, dx, dy,
-        scale, min_neighbours, group_rect);
+    TestableDetector detector(classifier, max_window_size, min_window_size,
+        kPyramidLevels, dx, dy, min_neighbours, group_rect);
 
     std::vector<int> winNums;
     std::vector<cv::Mat> imgPyramid;
@@ -124,12 +120,11 @@ TEST(Detector, check_correctness_of_schedule_when_nscales_more_than_np)
 {
     ClassifierFactory factory;
     std::shared_ptr<Classifier> classifier = factory.CreateClassifier(FAKE_CLASSIFIER);
-    cv::Size window_size(3, 3);
-    double scale = 1.2;
-    int min_neighbours = 3, dx = 1, dy = 1;
+    cv::Size max_window_size(3, 3), min_window_size(2, 2);
+    int min_neighbours = 3, dx = 1, dy = 1, kPyramidLevels = 2;
     bool group_rect = true;
-    TestableDetector detector(classifier, window_size, dx, dy,
-        scale, min_neighbours, group_rect);
+    TestableDetector detector(classifier, max_window_size, min_window_size,
+        kPyramidLevels, dx, dy, min_neighbours, group_rect);
 
     std::vector<int> winNums;
     std::vector<cv::Mat> imgPyramid;
@@ -171,12 +166,11 @@ TEST(Detector, check_number_of_levels_in_image_pyramid)
 {
     ClassifierFactory factory;
     std::shared_ptr<Classifier> classifier = factory.CreateClassifier(FAKE_CLASSIFIER);
-    cv::Size window_size(227, 227);
-    double scale = 1.3;
-    int min_neighbours = 3, dx = 1, dy = 1;
+    cv::Size max_window_size(227, 227), min_window_size(60, 60);
+    int min_neighbours = 3, dx = 1, dy = 1, kPyramidLevels = 2;
     bool group_rect = true;
-    Detector detector(classifier, window_size, dx, dy,
-        scale, min_neighbours, group_rect);
+    Detector detector(classifier, max_window_size, min_window_size,
+        kPyramidLevels, dx, dy, min_neighbours, group_rect);
 
     cv::Mat img(363, 450, CV_8UC3);
     std::vector<cv::Mat> imgPyramid;
@@ -185,6 +179,29 @@ TEST(Detector, check_number_of_levels_in_image_pyramid)
     
     EXPECT_EQ(2, imgPyramid.size());
     EXPECT_EQ(2, scales.size());
+}
+
+TEST(Detector, check_create_image_pyramid_failed)
+{
+    ClassifierFactory factory;
+    std::shared_ptr<Classifier> classifier = factory.CreateClassifier(FAKE_CLASSIFIER);
+    cv::Size max_window_size(227, 227), min_window_size(60, 60);
+    int kPyramidLevels = 3;
+    int min_neighbours = 3, dx = 1, dy = 1;
+    bool group_rect = true;
+    Detector detector(classifier, max_window_size, min_window_size,
+        kPyramidLevels, dx, dy, min_neighbours, group_rect);
+
+    cv::Mat img(363, 450, CV_8UC3);
+    std::vector<cv::Mat> imgPyramid;
+    std::vector<float> scales;
+    detector.CreateImagePyramid(img, imgPyramid, scales);
+    for (int i = 0; i < kPyramidLevels; i++)
+    {
+        std::cout << imgPyramid[i].rows << "\t"
+                  << imgPyramid[i].cols << "\t"
+                  << scales[i] << std::endl;
+    }
 }
 
 TEST(Detector, check_image_pyramid_algorithm)

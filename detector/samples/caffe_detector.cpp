@@ -56,9 +56,11 @@ void detect(shared_ptr<Classifier> classifier, Args args)
     float scale = params["scale"];
     int min_neighbs = params["min_neighbs"];
     int group_rect = params["group_rect"];
+    cv::Size maxWindowSize = Size(227, 227), minWindowSize = Size(10, 10);
+    int kPyramidLevels = 3;
 
-    Detector detector(classifier, Size(227, 227),
-                      step, step, scale, min_neighbs, group_rect);
+    Detector detector(classifier, maxWindowSize, minWindowSize,
+                      kPyramidLevels, step, step, min_neighbs, group_rect);
 
     MPI_Comm_size(MPI_COMM_WORLD, &np);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -147,12 +149,14 @@ void detect(shared_ptr<Classifier> classifier, Args args)
     
     FileNode params = args.params_file_node;
     int step = params["step"];
-    float scale = params["scale"];
+    //float scale = params["scale"];
     int min_neighbs = params["min_neighbs"];
     int group_rect = params["group_rect"];
+    cv::Size maxWindowSize = Size(227, 227), minWindowSize = Size(60, 60);
+    int kPyramidLevels = 3;
 
-    Detector detector(classifier, Size(227, 227),
-                      step, step, scale, min_neighbs, group_rect);
+    Detector detector(classifier, maxWindowSize, minWindowSize,
+                      kPyramidLevels, step, step, min_neighbs, group_rect);
 
     for (size_t i = 0; i < args.filenames.size(); i++)
     {
