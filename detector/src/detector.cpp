@@ -55,8 +55,6 @@ void Detector::CreateImagePyramid(const cv::Mat &img, std::vector<Mat> &pyramid,
     int kLevels = 0;
     float scale = powf(((float)max_window_size.width) / ((float)min_window_size.width), 
                        1.0f / ((float)kPyramidLevels - 1.0f));
-    cout << scale << endl;
-
     Mat resizedImg;
     img.copyTo(resizedImg);
     float scaleFactor = 1.0f;
@@ -225,15 +223,15 @@ void Detector::Detect(std::vector<cv::Mat> &imgPyramid,
     int kLevels = procLevels.size();
     vector<int> procLabels;
     vector<double> procScores;
-    vector<Rect> procRects;    
+    vector<Rect> procRects;
     for (int i = 0; i < kLevels; i++)
     {
-        int levelId = procLevels[i];        
+        int levelId = procLevels[i];
+        cout << "Process " << rank << ": " << endl
+             << "\tLevelId: " <<  levelId << " (scale = " << scales[levelId] << ")" << endl;
         Detect(imgPyramid[levelId], procLabels, procScores, procRects,
             scales[levelId], detectorThreshold, mergeRectThreshold);
-        cout <<  "Process " << rank << ": " << endl 
-             << "\tLevelId: " <<  levelId << " (scale = " << scales[levelId]
-             << "), kLabels = " << procLabels.size()
+        cout << "kLabels = " << procLabels.size()
              << ", kScores = " << procScores.size()
              << ", kRects =  " << procRects.size() << endl;
     }
