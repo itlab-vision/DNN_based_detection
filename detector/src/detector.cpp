@@ -125,7 +125,7 @@ void Detector::Detect(Mat &layer, vector<int> &labels,
     }
     if (group_rect)
     {
-        // FIX: groupRectangkes doesn't modidficate labels and scores
+        // FIX: groupRectangkes doesn't modificate labels and scores
         groupRectangles(layerRect, min_neighbours, mergeRectThreshold);
     }
     rects.insert(rects.end(), layerRect.begin(), layerRect.end());
