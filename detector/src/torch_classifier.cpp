@@ -1,14 +1,11 @@
-#include <lua_classifier.hpp>
+#include "torch_classifier.hpp"
 
 #include <iostream>
-
-#include "opencv2/highgui/highgui.hpp"
-#include "opencv2/imgproc/imgproc.hpp"
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 using namespace cv;
 using namespace std;
-
-#ifdef HAVE_LUA
 
 extern "C" {
 #include "lua.hpp"
@@ -52,8 +49,6 @@ FacesClassifier::~FacesClassifier()
     lua_close(L);
 }
 
-
-
 Result FacesClassifier::Classify(Mat& img)
 {
     int len = img.rows * img.cols * img.channels();
@@ -94,18 +89,3 @@ Result FacesClassifier::Classify(Mat& img)
     delete[] tensorData;
     return result;
 }
-
-#else
-
-LuaClassifier::LuaClassifier()
-{}
-
-Classifier::Result LuaClassifier::Classify(Mat& /*img*/)
-{
-    return Result();
-}
-
-LuaClassifier::~LuaClassifier()
-{}
-
-#endif

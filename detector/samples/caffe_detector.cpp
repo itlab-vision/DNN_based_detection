@@ -5,8 +5,8 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 
-#include "Detector.hpp"
-#include "caffe_classifier.hpp"
+#include "detector.hpp"
+#include "classifier_factory.hpp"
 
 using namespace std;
 using cv::Rect;
@@ -53,7 +53,7 @@ void detect(shared_ptr<Classifier> classifier, Args args, ofstream &out) {
         Mat img = imread(args.filenames[i], cv::IMREAD_COLOR);
         cout << "Processing " << args.filenames[i] << endl;
 
-        detector.Detect(img, labels, scores, rects);
+        detector.DetectMultiScale(img, labels, scores, rects);
 
         out << args.filenames[i] << endl << rects.size() << endl;
         for (size_t j = 0; j < rects.size(); j++) {
@@ -95,7 +95,8 @@ int main(int argc, char** argv) {
 
     args.params_file_node = fs.root();
 
-    shared_ptr<Classifier> classifier(new CaffeClassifier());
+    ClassifierFactory factory;
+    shared_ptr<Classifier> classifier = factory.CreateClassifier(CAFFE_CLASSIFIER);
     classifier->SetParams(args.params_file_node);
     classifier->Init();
 

@@ -5,29 +5,29 @@
 #include <string>
 #include <vector>
 
-#include "caffe/caffe.hpp"
 #include "opencv2/core/core.hpp"
 
-#include "Classifier.hpp"
-
+#include "classifier.hpp"
 
 class CaffeClassifier : public Classifier
 {
 public:
-    typedef caffe::Blob<float> Blobf;
     typedef Classifier::Result Result;
 
-    CaffeClassifier();
     virtual void SetParams(const std::string& params_string);
     virtual void SetParams(const cv::FileNode& params_file_node);
     virtual void Init();
     virtual Result Classify(cv::Mat& image);
-    virtual std::vector<Result> Classify(const std::vector<cv::Mat>& images);
+    virtual std::vector<Result> Classify(const std::vector<cv::Mat>& images);    
     virtual ~CaffeClassifier();
+
+    friend ClassifierFactory;
 
 private:
     struct Impl;
     std::shared_ptr<Impl> impl;
+protected:
+    CaffeClassifier();
 };
 
 #endif

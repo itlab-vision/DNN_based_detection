@@ -6,8 +6,8 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
-#include "Detector.hpp"
-#include "lua_classifier.hpp"
+#include "detector.hpp"
+#include "classifier_factory.hpp"
 
 #include <omp.h>
 
@@ -25,16 +25,16 @@ void readAnnotationFile(const string &filename, string &imgFilename, vector<Rect
 
 int main(int argc, char **argv)
 {
-	string annotsFilename;
-	if (readArguments(argc, argv, annotsFilename) != 0)
+    string annotsFilename;
+    if (readArguments(argc, argv, annotsFilename) != 0)
     {
         return 1;
     }
     annotsFilename = "/home/artem/projects/itlab/itlab-vision-faces-detection/ItlabFaceDetector/imgs/lfw_ffd_ann.txt";
-	ifstream in(annotsFilename);
-	vector<string> annotsFilenames;
+    ifstream in(annotsFilename);
+    vector<string> annotsFilenames;
     vector<Rect> faces;
-	while (!in.eof())
+    while (!in.eof())
     {
         string filename;
 
@@ -57,7 +57,8 @@ int main(int argc, char **argv)
 
     cout << faces.size() << endl;
 
-    shared_ptr<Classifier> classifier(new LuaClassifier());
+    ClassifierFactory factory;
+    shared_ptr<Classifier> classifier = factory.CreateClassifier(TORCH_CLASSIFIER);
     Detector detector(classifier, Size(32, 32), 1, 1, 1.2, 3, true);
 
     for (uint i = 1; i < annotsFilenames.size(); i++)
@@ -70,7 +71,7 @@ int main(int argc, char **argv)
         vector<int> labels;
         vector<Rect> negatives;
 
-        detector.Detect(img, labels, scores, rects);
+        detector.DetectMultiScale(img, labels, scores, rects);
 
         for (uint j = 0; j < rects.size(); j++)
         {
@@ -100,7 +101,7 @@ int main(int argc, char **argv)
     }
 
     waitKey(0);
-	return 0;
+    return 0;
 }
 
 int readArguments(int argc, char **argv, string &annotsFilename)
