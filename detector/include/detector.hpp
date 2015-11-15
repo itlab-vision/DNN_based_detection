@@ -14,7 +14,7 @@ public:
     Detector(std::shared_ptr<Classifier> classifier,
              cv::Size max_window_size, cv::Size min_window_size,
              int kPyramidLevels, int dx, int dy,
-             int min_neighbours, bool group_rect);
+             int min_neighbours, bool group_rect,bool nms_max,bool nms_avg);
     void Detect(cv::Mat &layer, std::vector<int> &labels,
             std::vector<double> &scores, std::vector<cv::Rect> &rects,
             const float scaleFactor,
@@ -26,6 +26,10 @@ public:
             const double mergeRectThreshold = 0.2);
     void CreateImagePyramid(const cv::Mat &img, std::vector<cv::Mat> &pyramid,
                             std::vector<float> &scales);
+    void NMS_max(std::vector<int> &labels, std::vector<double> &scores, std::vector<cv::Rect> &rects,
+            const double theshold_overlap = 0.6); 
+    void NMS_avg(std::vector<int> &labels, std::vector<double> &scores, std::vector<cv::Rect> &rects, 
+            const double mergeRectThreshold = 0.8);
 
 protected:
     void Preprocessing(cv::Mat &img);
@@ -51,6 +55,8 @@ protected:
     int dy;
     int min_neighbours;
     bool group_rect;
+    bool nms_max;
+    bool nms_avg;
 };
 
 #endif

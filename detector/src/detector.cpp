@@ -37,7 +37,8 @@ void Detector::Preprocessing(Mat &img)
 Detector::Detector(std::shared_ptr<Classifier> classifier_,
              cv::Size max_window_size_, cv::Size min_window_size_,
              int kPyramidLevels_, int dx_ = 1, int dy_ = 1,
-             int min_neighbours_ = 3, bool group_rect_ = false)
+             int min_neighbours_ = 3, bool group_rect_ = false,
+             bool nms_max_ = false, bool nms_avg_ = false )
     : classifier(classifier_),
       max_window_size(max_window_size_),
       min_window_size(min_window_size_),
@@ -45,7 +46,9 @@ Detector::Detector(std::shared_ptr<Classifier> classifier_,
       dx(dx_),
       dy(dy_),
       min_neighbours(min_neighbours_),
-      group_rect(group_rect_)
+      group_rect(group_rect_),
+      nms_max(nms_max_),
+      nms_avg(nms_avg_)
 {}
 
 void Detector::CreateImagePyramid(const cv::Mat &img, std::vector<Mat> &pyramid,
@@ -128,9 +131,95 @@ void Detector::Detect(Mat &layer, vector<int> &labels,
         // FIX: groupRectangkes doesn't modificate labels and scores
         groupRectangles(layerRect, min_neighbours, mergeRectThreshold);
     }
+    if (nms_max){
+        NMS_max(labels, scores, layerRect);
+    }
+    if (nms_avg){
+        NMS_avg(labels,scores,layerRect);
+    }
     rects.insert(rects.end(), layerRect.begin(), layerRect.end());
 }
-
+void Detector::NMS_max(std::vector<int> &labels, std::vector<double> &scores, std::vector<cv::Rect> &rects, const double theshold_overlap){
+    size_t index_max = std::distance(std::begin(scores), 
+                std::max_element(std::begin(scores), std::end(scores)));
+    Rect rect_max_score = rects[index_max];
+    Rect intersection;
+    for (size_t i=0;i<scores.size();i++){
+        if (labels[i]==0 && i!=index_max){
+            intersection = rects[i]&rect_max_score;
+            if ( intersection.area()<0.0 ||  intersection.area()/rect_max_score.area() <= theshold_overlap){
+                labels.erase( labels.begin() + i);
+                scores.erase( scores.begin() + i);
+                rects.erase( rects.begin() + i);
+                }
+           }
+    }   
+}   
+void Detector::NMS_avg(std::vector<int> &labels, std::vector<double> &scores, std::vector<cv::Rect> &rects, const double mergeRectThreshold){
+    for (size_t i=0;i<labels.size();i++){ 
+        if  (scores[i]<0.2){
+            labels.erase( labels.begin() + i);
+            scores.erase( scores.begin() + i);
+            rects.erase( rects.begin() + i);
+        }  
+    }
+    std::vector<std::vector<cv::Rect>> cluster;
+    std::vector<std::vector<double>> scores_in_cluster;
+    std::vector<std::vector<int>> labels_in_cluster;
+    while(rects.size()!=1){
+        std::vector<cv::Rect> clust;
+        std::vector<double> scores_clust;
+        std::vector<int> label_clust;
+        size_t index_max = std::distance(std::begin(scores),
+                 std::max_element(std::begin(scores), std::end(scores)));
+        clust.push_back(rects[index_max]);
+        for(size_t i=0;i<rects.size();i++){
+            if (i!=index_max){
+                if((double)(rects[index_max]&rects[i]).area()/(double) rects[i].area()>mergeRectThreshold){
+                    clust.push_back(rects[i]);
+                    scores_clust.push_back(scores[i]);
+                    label_clust.push_back(labels[i]);
+                }
+                rects.erase( rects.begin() + i);
+                labels.erase( labels.begin() + i);
+                scores.erase( scores.begin() + i);
+            }
+        }
+        cluster.push_back(clust);
+        scores_in_cluster.push_back(scores_clust);
+        labels_in_cluster.push_back(label_clust);
+    }
+    std::vector<cv::Rect> rect, 
+                rect_clust;
+    std::vector<double> score,
+                score_clust;
+    std::vector<int> label,
+                label_clust;
+    for (size_t i=0;i<cluster.size();i++){
+        rect_clust = cluster[i];
+        score_clust = scores_in_cluster[i];
+        label_clust = labels_in_cluster[i];
+        size_t index_max = std::distance(std::begin(score_clust), 
+                    std::max_element(std::begin(score_clust), std::end(score_clust)));
+        cv::Rect avg_rect;
+        for (size_t j=0;j<rect_clust.size();j++){
+            avg_rect.x += rect_clust[j].x;
+            avg_rect.y += rect_clust[j].y;
+            avg_rect.width += rect_clust[j].width;
+            avg_rect.height += rect_clust[j].height;
+        }
+        avg_rect.x /= rect_clust.size();
+        avg_rect.y /= rect_clust.size();
+        avg_rect.width /= rect_clust.size();
+        avg_rect.height /= rect_clust.size();
+        rect.push_back(avg_rect);
+        score.push_back(score_clust[index_max]);
+        label.push_back(label_clust[index_max]);
+    }
+    rects = rect;
+    scores = score;
+    label = labels;
+}
 #if defined(HAVE_MPI) && defined(PAR_PYRAMID)
 void Detector::GetLayerWindowsNumber(std::vector<cv::Mat> &imgPyramid,
         std::vector<int> &winNum)

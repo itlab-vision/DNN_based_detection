@@ -189,15 +189,19 @@ int main(int argc, char** argv)
     int step = params["step"];
     int min_neighbs = params["min_neighbs"];
     int group_rect = params["group_rect"];
+    int nms_max = params["nms_max"];
+    int nms_avg = params["nms_avg"];
     Size maxWindowSize(params["max_win_width"], params["max_win_height"]),
          minWindowSize(params["min_win_width"], params["min_win_height"]);
     int kPyramidLevels = params["pyramid_levels_num"];
-    cout << step << " " << min_neighbs << " " << group_rect << " "
+    cout << step << " " << min_neighbs << " " << group_rect <<" "
+         <<nms_max<<" "<<nms_avg<<" "
          << maxWindowSize.width << " " << maxWindowSize.height << " "
          << minWindowSize.width << " " << minWindowSize.height << " "
          << kPyramidLevels << endl;
     Detector detector(classifier, maxWindowSize, minWindowSize,
-                      kPyramidLevels, step, step, min_neighbs, group_rect);
+                      kPyramidLevels, step, step, min_neighbs, 
+                      group_rect,nms_max,nms_avg);
 
     detect(detector, args.filenames, outFileName);
 

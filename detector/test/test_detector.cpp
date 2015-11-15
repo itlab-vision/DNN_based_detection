@@ -18,7 +18,7 @@ public:
              int kPyramidLevels, int dx, int dy,
              int min_neighbours, bool group_rect) :
         Detector(classifier, max_window_size, min_window_size, kPyramidLevels,
-            dx, dy, min_neighbours, group_rect)
+            dx, dy, min_neighbours, group_rect, false , false)
     { }
     using Detector::GetLayerWindowsNumber;
     using Detector::CreateParallelExecutionSchedule;
@@ -170,7 +170,7 @@ TEST(Detector, check_number_of_levels_in_image_pyramid)
     int min_neighbours = 3, dx = 1, dy = 1, kPyramidLevels = 2;
     bool group_rect = true;
     Detector detector(classifier, max_window_size, min_window_size,
-        kPyramidLevels, dx, dy, min_neighbours, group_rect);
+        kPyramidLevels, dx, dy, min_neighbours, group_rect, false ,false);
 
     cv::Mat img(363, 450, CV_8UC3);
     std::vector<cv::Mat> imgPyramid;
@@ -190,7 +190,7 @@ TEST(Detector, check_create_image_pyramid_failed)
     int min_neighbours = 3, dx = 1, dy = 1;
     bool group_rect = true;
     Detector detector(classifier, max_window_size, min_window_size,
-        kPyramidLevels, dx, dy, min_neighbours, group_rect);
+        kPyramidLevels, dx, dy, min_neighbours, group_rect, false ,false);
 
     cv::Mat img(363, 450, CV_8UC3);
     std::vector<cv::Mat> imgPyramid;
