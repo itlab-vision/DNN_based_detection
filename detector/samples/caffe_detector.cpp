@@ -27,17 +27,22 @@ struct Args {
 };
 
 const char* help = "detector \"input/folder\"\n\
-    input folder must contain two files:\n\
-    annotation.txt - contains filenames of imgs to detect\n\
+    input folder must contain one file:\n\
     config.yml - contains description of classifier:\n\
+        input_file_name\n\
         step (int)\n\
         min_neighbs (int)\n\
-        scale (float)\n\
+        max_win_width (int)\n\
+        max_win_height (int)\n\
+        min_win_width (int)\n\
+        min_win_height (int)\n\
+        pyramid_levels_num (int)\n\
         group_rect (int 0 or 1)\n\
         device_id - <0 cpu, >=0 gpu\n\
         net_description_file\n\
         net_binary_file\n\
-    output of the program will be written in the input folder\n\
+        output_blob_name\n\
+        output_file_name\n\
         \n";
 
 
@@ -156,11 +161,11 @@ int main(int argc, char** argv)
     Args args;    
     args.input_path = string(argv[1]);    
 
-    string annot = args.input_path + "/annotation.txt";
     string config = args.input_path + "/config.yml";
-
-    ifstream content_annot(annot);
     FileStorage fs(config, FileStorage::READ);
+    string annot;
+    fs["input_file_name"] >> annot;
+    ifstream content_annot(annot);
 
     if (!content_annot.is_open() || !fs.isOpened())
     {
