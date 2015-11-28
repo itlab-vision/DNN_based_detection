@@ -46,11 +46,12 @@ while [ $i -lt 10 ]; do
 	sed -i '$ c output_file_name: '"$name_use"  $config_file
 
 	#run detector
-	if [ $use_mpi -eq 1 ];then
-		#echo $count__proc
-		srun -t "3-00:00:00" -o $i".txt" -p $use_gpu -N $count__proc $path_to_datector"/caffe_detector"  $folder_to_save  &
-	else
-		srun -t "3-00:00:00" -o $i".txt" -p $use_gpu -N $count__proc $path_to_datector"/caffe_detector"  $folder_to_save  &
-	fi
-
+	#if [ $i -eq 1 ]; then
+		if [ $use_mpi -eq 1 ];then
+			echo $count__proc
+			srun -t "3-00:00:00" -o $i".txt" -p $use_gpu --ntasks-per-node 1 -N $count__proc -n $count__proc $path_to_datector"/caffe_detector"  $folder_to_save  &
+		else
+			srun -t "3-00:00:00" -o $i".txt" -p $use_gpu -N $count__proc $path_to_datector"/caffe_detector"  $folder_to_save  &
+		fi
+	#fi
 done
