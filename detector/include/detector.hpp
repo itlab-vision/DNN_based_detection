@@ -29,7 +29,7 @@ public:
     void NMS_max(std::vector<int> &labels, std::vector<double> &scores, std::vector<cv::Rect> &rects,
             const double theshold_overlap = 0.6); 
     void NMS_avg(std::vector<int> &labels, std::vector<double> &scores, std::vector<cv::Rect> &rects, 
-            const double mergeRectThreshold = 0.8);
+            const double mergeRectThreshold = 0.9);
 
 protected:
     void Preprocessing(cv::Mat &img);
