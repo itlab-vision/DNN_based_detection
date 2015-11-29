@@ -134,7 +134,7 @@ void Detector::Detect(Mat &layer, vector<int> &labels,
         groupRectangles(layerRect, min_neighbours, mergeRectThreshold);
     }
     if (nms_max){
-        NMS_max(labels, scores, layerRect);
+        NMS_max(layerLabel,layerScore,layerRect);
     }
     if (nms_avg){
         NMS_avg(layerLabel,layerScore,layerRect);
