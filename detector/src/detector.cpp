@@ -94,6 +94,8 @@ void Detector::Detect(Mat &layer, vector<int> &labels,
         const double mergeRectThreshold)
 {
     vector<Rect> layerRect;
+    vector<int> layerLabel;
+    vector<double> layerScore;
     for (int y = 0; y < layer.rows - max_window_size.height + 1; y += dy)
     {
         for (int x = 0; x < layer.cols - max_window_size.width + 1; x += dx)
@@ -105,8 +107,8 @@ void Detector::Detect(Mat &layer, vector<int> &labels,
             // FIX: class label - 0
             if (fabs(result.confidence) > detectorThreshold && result.label == 0)
             {
-                labels.push_back(result.label);
-                scores.push_back(result.confidence);
+                layerLabel.push_back(result.label);
+                layerScore.push_back(result.confidence);
                 if (scaleFactor < 1.0f)
                 {
                     layerRect.push_back(
@@ -135,9 +137,11 @@ void Detector::Detect(Mat &layer, vector<int> &labels,
         NMS_max(labels, scores, layerRect);
     }
     if (nms_avg){
-        NMS_avg(labels,scores,layerRect);
+        NMS_avg(layerLabel,layerScore,layerRect);
     }
     rects.insert(rects.end(), layerRect.begin(), layerRect.end());
+    labels.insert(labels.end(), layerLabel.begin(), layerLabel.end());
+    scores.insert( scores.end(), layerScore.begin(), layerScore.end() );
 }
 void Detector::NMS_max(std::vector<int> &labels, std::vector<double> &scores, std::vector<cv::Rect> &rects, const double theshold_overlap){
     size_t index_max = std::distance(std::begin(scores), 
