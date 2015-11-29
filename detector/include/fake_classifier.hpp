@@ -44,9 +44,7 @@ public:
 
 protected:
     FakeClassifier() 
-    { 
-        throw NotImplemented();     
-    }
+    { }
 };
 
 #endif

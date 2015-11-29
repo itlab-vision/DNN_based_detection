@@ -12,6 +12,9 @@ FILE(GLOB srcs "*.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 option(WITH_CAFFE "Link with Caffe library." OFF)
 option(WITH_CPU_ONLY "Caffe will be used in CPU or GPU mode" OFF)
 option(WITH_TORCH "Link with Lua to support Torch-based classifier." OFF)
+option(WITH_MPI "Link MPI libraries." OFF)
+option(PAR_PYRAMID "Parallel by the pyramid of resized images." OFF)
+option(PAR_SET_IMAGES "Parallel by initial set of images." OFF)
 #----------------------------------------------------------------------------------#
 # if NOT WITH_CAFFE then exclude classifier implementation based on Caffe library
 if (NOT WITH_CAFFE)
@@ -73,14 +76,43 @@ if (WITH_TORCH)
     endif()
     add_definitions(-DHAVE_TORCH)
 endif()
+
+if (WITH_MPI)
+    find_package(MPI REQUIRED)
+    if (MPI_FOUND)
+        include_directories(${MPI_CXX_INCLUDE_PATH})
+        target_link_libraries(${PROJECT_NAME} ${MPI_CXX_LIBRARIES})
+        if (MPI_CXX_COMPILE_FLAGS)
+            set_target_properties(${PROJECT_NAME} PROPERTIES
+                COMPILE_FLAGS ${MPI_CXX_COMPILE_FLAGS})
+        endif()
+        if (MPI_CXX_LINK_FLAGS)
+            set_target_properties(${PROJECT_NAME} PROPERTIES
+                LINK_FLAGS ${MPI_CXX_LINK_FLAGS})
+        endif()
+    endif()
+    add_definitions(-DHAVE_MPI)
+endif()
+
+if (PAR_PYRAMID)
+    add_definitions(-DPAR_PYRAMID)
+endif()
+if (PAR_SET_IMAGES)
+    add_definitions(-DPAR_SET_IMAGES)
+endif()
 #----------------------------------------------------------------------------------#
 
-
 add_subdirectory(samples)
+add_subdirectory(gtest)
+add_subdirectory(test)
+
 #----------------------------------------------------------------------------------#
 message(STATUS ${PROJECT_NAME})
 message(STATUS "-------------------------------------------------------")
 message(STATUS "Caffe support     ${WITH_CAFFE}")
-message(STATUS "      CPY_ONLY:   ${WITH_CPU_ONLY}")
+message(STATUS "   CPU_ONLY:      ${WITH_CPU_ONLY}")
 message(STATUS "Torch support     ${WITH_TORCH}")
+message(STATUS "MPI support       ${WITH_MPI}")
+message(STATUS "   PAR_PYRAMID:   ${PAR_PYRAMID}")
+message(STATUS "   PAR_SET_IMAGES:${PAR_SET_IMAGES}")
 message(STATUS "-------------------------------------------------------")
