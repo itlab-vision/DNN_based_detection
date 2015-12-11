@@ -59,7 +59,7 @@ int main(int argc, char **argv)
 
     ClassifierFactory factory;
     shared_ptr<Classifier> classifier = factory.CreateClassifier(TORCH_CLASSIFIER);
-    Detector detector(classifier, Size(32, 32), Size(10, 10), 3, 1, 1, 3, true);
+    Detector detector(classifier, Size(32, 32), Size(10, 10), 3, 1, 1, 3, NMS_MAX);
 
     for (uint i = 1; i < annotsFilenames.size(); i++)
     {

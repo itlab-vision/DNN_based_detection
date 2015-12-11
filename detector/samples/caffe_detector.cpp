@@ -197,7 +197,7 @@ int main(int argc, char** argv)
          << minWindowSize.width << " " << minWindowSize.height << " "
          << kPyramidLevels << endl;
     Detector detector(classifier, maxWindowSize, minWindowSize,
-                      kPyramidLevels, step, step, min_neighbs, group_rect);
+                      kPyramidLevels, step, step, min_neighbs, (NMS_TYPE)group_rect);
 
     detect(detector, args.filenames, outFileName);
 
