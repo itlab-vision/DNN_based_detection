@@ -38,6 +38,9 @@ public:
 
 protected:
     void Preprocessing(cv::Mat &img);
+    void SortRectsByScores(std::vector<cv::Rect> &rects, std::vector<int> &labels,
+                           std::vector<double> &scores);
+    cv::Rect GetAverageRect(const std::vector<cv::Rect> &objRects);
     void GroupRectanglesMax(std::vector<cv::Rect> &rects, std::vector<int> &labels,
                             std::vector<double> &scores, const double threshold);
     void GroupRectanglesAvg(std::vector<cv::Rect> &rects, std::vector<int> &labels,
@@ -45,9 +48,9 @@ protected:
 
 #if defined(HAVE_MPI) && defined(PAR_PYRAMID)
     void GetLayerWindowsNumber(std::vector<cv::Mat> &imgPyramid,
-        std::vector<int> &winNum);
+        std::vector<int> &winNum);    
     void CreateParallelExecutionSchedule(std::vector<int> &winNum,
-        std::vector<std::vector<int> > &levels);    
+        std::vector<std::vector<int> > &levels);
     void Detect(std::vector<cv::Mat> &imgPyramid,
             std::vector<std::vector<int> > &levels,
             std::vector<float> &scales,

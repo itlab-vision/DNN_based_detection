@@ -146,9 +146,8 @@ void Detector::GroupRectangles(std::vector<cv::Rect> &rects,
     }    
 }
 
-void Detector::GroupRectanglesMax(std::vector<cv::Rect> &rects,
-    std::vector<int> &labels, std::vector<double> &scores,
-    const double threshold)
+void Detector::SortRectsByScores(std::vector<cv::Rect> &rects,
+    std::vector<int> &labels, std::vector<double> &scores)
 {
     for (int i = 0; i < rects.size(); i++)
     {
@@ -170,13 +169,20 @@ void Detector::GroupRectanglesMax(std::vector<cv::Rect> &rects,
             }
         }
     }
+}
+
+void Detector::GroupRectanglesMax(std::vector<cv::Rect> &rects,
+    std::vector<int> &labels, std::vector<double> &scores,
+    const double threshold)
+{
+    SortRectsByScores(rects, labels, scores);
     for (int i = 0; i < rects.size(); i++)
     {
         for (int j = rects.size() - 1; j >= i + 1; j--)
         {
             double intersection = (rects[i] & rects[j]).area(),
-                   combination = rects[i].area() + rects[j].area() - 
-                                 (rects[i] & rects[j]).area();
+                   combination  = rects[i].area() + rects[j].area() - 
+                                  (rects[i] & rects[j]).area();
             if ( intersection / combination >= threshold)
             {
                 rects.erase(rects.begin() + j);
@@ -187,11 +193,66 @@ void Detector::GroupRectanglesMax(std::vector<cv::Rect> &rects,
     }
 }
 
+cv::Rect Detector::GetAverageRect(const std::vector<cv::Rect> &objRects)
+{
+    int avgWidth = 0, avgHeight = 0;
+    cv::Point2f center(0.0, 0.0);
+    for (int i = 0; i < objRects.size(); i++)
+    {
+        center.x  += objRects[i].x + objRects[i].width  / 2.0;
+        center.y  += objRects[i].y + objRects[i].height / 2.0;
+        avgWidth  += objRects[i].width;
+        avgHeight += objRects[i].height;
+    }
+    center.x  /= objRects.size();
+    center.y  /= objRects.size();
+    avgWidth  /= objRects.size();
+    avgHeight /= objRects.size();
+    
+    return cv::Rect((int)center.x, (int)center.y, (int)avgWidth, (int)avgHeight);
+}
+
 void Detector::GroupRectanglesAvg(std::vector<cv::Rect> &rects,
     std::vector<int> &labels, std::vector<double> &scores,
     const double threshold)
 {
+    SortRectsByScores(rects, labels, scores);
+    std::vector<cv::Rect> objRects;
+    std::vector<int> objLabels;
+    std::vector<double> objScores;
+    for (int i = 0; i < rects.size(); i++)
+    {
+        objRects.push_back(rects[i]);
+        objLabels.push_back(labels[i]);
+        objScores.push_back(scores[i]);
+        for (int j = rects.size() - 1; j >= i + 1; j--)
+        {
+            double intersection = (rects[i] & rects[j]).area(),
+                   combination  = rects[i].area() + rects[j].area() - 
+                                  (rects[i] & rects[j]).area();
+            if ( intersection / combination >= threshold)
+            {
+                objRects.push_back(rects[j]);
+                objLabels.push_back(labels[j]);
+                objScores.push_back(scores[j]);
 
+                rects.erase(rects.begin() + j);
+                labels.erase(labels.begin() + j);
+                scores.erase(scores.begin() + j);
+            }
+        }
+        for (int i = 0; i < objRects.size(); i++)
+        {
+            std::cout << "(" << objRects[i].x << ", " << objRects[i].y << ", " << 
+                      objRects[i].width << ", " << objRects[i].height << ") " <<
+                      objScores[i] << " " << objLabels[i] << std::endl;
+        }
+        std::cout << std::endl;
+        rects[i] = GetAverageRect(objRects);
+        objRects.clear();
+        objLabels.clear();
+        objScores.clear();
+    }
 }
 
 

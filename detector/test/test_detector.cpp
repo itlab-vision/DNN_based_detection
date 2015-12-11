@@ -340,3 +340,47 @@ TEST(Detector, check_group_rects_by_maximum_score)
     EXPECT_EQ(cv::Rect(1, 3, 5, 7), rects[1]);
     EXPECT_EQ(cv::Rect(2, 1, 6, 9), rects[2]);
 }
+
+TEST(Detector, check_group_rects_by_average)
+{
+    std::vector<cv::Rect> rects;
+    std::vector<int> labels;
+    std::vector<double> scores;
+    
+    rects.push_back(cv::Rect(1, 1, 3, 6));
+    rects.push_back(cv::Rect(1, 3, 5, 7));
+    rects.push_back(cv::Rect(0, 1, 4, 6));
+    rects.push_back(cv::Rect(2, 1, 6, 9));
+    
+    labels.push_back(1);
+    labels.push_back(1);
+    labels.push_back(1);
+    labels.push_back(1);
+
+    scores.push_back(-0.4);
+    scores.push_back(0.4);
+    scores.push_back(0.8);
+    scores.push_back(0.36);
+
+    ClassifierFactory factory;
+    std::shared_ptr<Classifier> classifier = factory.CreateClassifier(FAKE_CLASSIFIER);
+    cv::Size max_window_size(227, 227), min_window_size(60, 60);
+    int min_neighbours = 3, dx = 1, dy = 1, kPyramidLevels = 2;
+    NMS_TYPE nms_type = NMS_AVG;
+    Detector detector(classifier, max_window_size, min_window_size,
+        kPyramidLevels, dx, dy, min_neighbours, nms_type);
+    double mergeThreshold = 0.5;
+    detector.GroupRectangles(rects, labels, scores, mergeThreshold);
+
+    for (int i = 0; i < rects.size(); i++)
+    {
+        std::cout << "(" << rects[i].x << ", " << rects[i].y << ", " << 
+                     rects[i].width << ", " << rects[i].height << ") " <<
+                     scores[i] << " " << labels[i] << std::endl;
+    }
+    
+    EXPECT_EQ(3, rects.size());
+    /*EXPECT_EQ(cv::Rect(0, 1, 4, 6), rects[0]);
+    EXPECT_EQ(cv::Rect(1, 3, 5, 7), rects[1]);
+    EXPECT_EQ(cv::Rect(2, 1, 6, 9), rects[2]);*/
+}
