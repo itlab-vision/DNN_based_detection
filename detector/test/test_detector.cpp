@@ -296,12 +296,15 @@ TEST(Detector, check_scores_sorting)
         }
     }
 
-    for (int i = 0; i < kRects; i++)
-    {
-        std::cout << "(" << rects[i].x << ", " << rects[i].y << ", " << 
-                     rects[i].width << ", " << rects[i].height << ") " <<
-                     scores[i] << " " << labels[i] << std::endl;
-    }
+    EXPECT_EQ(cv::Rect(0, 1, 4, 6), rects[0]);
+    EXPECT_EQ(cv::Rect(1, 3, 5, 7), rects[1]);
+    EXPECT_EQ(cv::Rect(2, 1, 6, 9), rects[2]);
+    EXPECT_EQ(cv::Rect(1, 1, 3, 6), rects[3]);
+
+    EXPECT_EQ(0.8, scores[0]);
+    EXPECT_EQ(0.4, scores[1]);
+    EXPECT_EQ(0.36, scores[2]);
+    EXPECT_EQ(-0.4, scores[3]);
 }
 
 TEST(Detector, check_group_rects_by_maximum_score)
@@ -372,15 +375,8 @@ TEST(Detector, check_group_rects_by_average)
     double mergeThreshold = 0.5;
     detector.GroupRectangles(rects, labels, scores, mergeThreshold);
 
-    for (int i = 0; i < rects.size(); i++)
-    {
-        std::cout << "(" << rects[i].x << ", " << rects[i].y << ", " << 
-                     rects[i].width << ", " << rects[i].height << ") " <<
-                     scores[i] << " " << labels[i] << std::endl;
-    }
-    
     EXPECT_EQ(3, rects.size());
-    /*EXPECT_EQ(cv::Rect(0, 1, 4, 6), rects[0]);
+    EXPECT_EQ(cv::Rect(0, 1, 3, 6), rects[0]);
     EXPECT_EQ(cv::Rect(1, 3, 5, 7), rects[1]);
-    EXPECT_EQ(cv::Rect(2, 1, 6, 9), rects[2]);*/
+    EXPECT_EQ(cv::Rect(2, 1, 6, 9), rects[2]);
 }

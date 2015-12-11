@@ -208,8 +208,9 @@ cv::Rect Detector::GetAverageRect(const std::vector<cv::Rect> &objRects)
     center.y  /= objRects.size();
     avgWidth  /= objRects.size();
     avgHeight /= objRects.size();
-    
-    return cv::Rect((int)center.x, (int)center.y, (int)avgWidth, (int)avgHeight);
+
+    return cv::Rect((int)(center.x - avgWidth / 2.0), 
+        (int)(center.y - avgHeight / 2.0), (int)avgWidth, (int)avgHeight);
 }
 
 void Detector::GroupRectanglesAvg(std::vector<cv::Rect> &rects,
@@ -217,6 +218,7 @@ void Detector::GroupRectanglesAvg(std::vector<cv::Rect> &rects,
     const double threshold)
 {
     SortRectsByScores(rects, labels, scores);
+    
     std::vector<cv::Rect> objRects;
     std::vector<int> objLabels;
     std::vector<double> objScores;
@@ -225,6 +227,7 @@ void Detector::GroupRectanglesAvg(std::vector<cv::Rect> &rects,
         objRects.push_back(rects[i]);
         objLabels.push_back(labels[i]);
         objScores.push_back(scores[i]);
+        
         for (int j = rects.size() - 1; j >= i + 1; j--)
         {
             double intersection = (rects[i] & rects[j]).area(),
@@ -241,14 +244,9 @@ void Detector::GroupRectanglesAvg(std::vector<cv::Rect> &rects,
                 scores.erase(scores.begin() + j);
             }
         }
-        for (int i = 0; i < objRects.size(); i++)
-        {
-            std::cout << "(" << objRects[i].x << ", " << objRects[i].y << ", " << 
-                      objRects[i].width << ", " << objRects[i].height << ") " <<
-                      objScores[i] << " " << objLabels[i] << std::endl;
-        }
-        std::cout << std::endl;
+        
         rects[i] = GetAverageRect(objRects);
+        
         objRects.clear();
         objLabels.clear();
         objScores.clear();
