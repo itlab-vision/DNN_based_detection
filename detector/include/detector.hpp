@@ -29,6 +29,7 @@ public:
 
 protected:
     void Preprocessing(cv::Mat &img);
+
 #if defined(HAVE_MPI) && defined(PAR_PYRAMID)
     void GetLayerWindowsNumber(std::vector<cv::Mat> &imgPyramid,
         std::vector<int> &winNum);

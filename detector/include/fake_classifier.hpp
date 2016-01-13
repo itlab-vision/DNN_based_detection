@@ -40,7 +40,7 @@ public:
     }
     virtual ~FakeClassifier() { }
 
-    friend ClassifierFactory;
+    friend class ClassifierFactory;
 
 protected:
     FakeClassifier() 

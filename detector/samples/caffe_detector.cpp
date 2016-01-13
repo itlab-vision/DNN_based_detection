@@ -13,6 +13,22 @@
 #include <mpi.h>
 #endif
 
+#define CV_TIMER
+
+#if defined(CV_TIMER)
+    #include <stdio.h>
+    #define TIMER_START(name) int64 t_##name = cv::getTickCount()
+    #define TIMER_END(name) printf("TIMER_" #name ":\t%6.2fms\n", \
+                1000.f * ((cv::getTickCount() - t_##name) / cv::getTickFrequency()))
+#elif defined(MPI_TIMER)
+    #include <stdio.h>
+    #define TIMER_START(name) double t_##name = MPI_Wtime(); 
+    #define TIMER_END(name) printf("TIMER_" #name ":\t%6.2fs\n", MPI_Wtime() - t_##name)
+#else
+    #define TIMER_START(name)
+    #define TIMER_END(name)
+#endif
+
 using namespace std;
 using cv::Rect;
 using cv::Mat;
@@ -43,16 +59,15 @@ const char* help = "detector \"input/folder\"\n\
 
 #if defined(HAVE_MPI) && defined(PAR_SET_IMAGES)
 
-void detect(Detector &detector, vector<string> &fileNames, string &outFileName)
+void detect(Detector &detector, const vector<string> &fileNames, const string &outFileName)
 {
-    int argc, rank, np, fileStep, leftIdx, rigthIdx;
-    char **argv;
-    MPI_File file;
-    MPI_Status status;
-    MPI_Init(&argc, &argv);
+    int rank, np, fileStep, leftIdx, rigthIdx;
+    // MPI_File file;
+    // MPI_Status status;
+    MPI_Init(0, 0);
 
-    Detector detector(classifier, maxWindowSize, minWindowSize,
-                      kPyramidLevels, step, step, min_neighbs, group_rect);
+//    Detector detector(classifier, maxWindowSize, minWindowSize,
+//                      kPyramidLevels, step, step, min_neighbs, group_rect);
 
     MPI_Comm_size(MPI_COMM_WORLD, &np);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -70,7 +85,9 @@ void detect(Detector &detector, vector<string> &fileNames, string &outFileName)
         vector<int> labels;
         vector<Rect> rects;
         vector<double> scores;
+        TIMER_START(DETECTION);
         detector.DetectMultiScale(img, labels, scores, rects);
+        TIMER_END(DETECTION);
         
         fileLine += fileName + "\n" + to_string(rects.size()) + "\n";
         for (size_t j = 0; j < rects.size(); j++)
@@ -80,17 +97,18 @@ void detect(Detector &detector, vector<string> &fileNames, string &outFileName)
                 + to_string(scores[j]) + " \n";
         }
     }
-    MPI_File_open(MPI_COMM_WORLD, (char *)outFileName.c_str(),
-        MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &file);
-    MPI_File_write_ordered(file, (void *)fileLine.c_str(),
-        fileLine.length(), MPI_CHAR, &status);
-    MPI_File_close(&file);
+    ofstream res_file(outFileName + to_string(rank) + ".txt");
+    res_file << fileLine;
+    // MPI_File_open(MPI_COMM_WORLD, (char *)outFileName.c_str(),
+    //     MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &file);
+    // MPI_File_write_ordered(file, (void *)fileLine.c_str(), fileLine.length(), MPI_CHAR, &status);
+    // MPI_File_close(&file);
     MPI_Finalize();
 }
 
-#else
+#elif defined(HAVE_MPI) && defined(PAR_PYRAMID)
 
-void detect(Detector &detector, string &fileName, string &outFileName)
+void detect(Detector &detector, const string &fileName, const string &outFileName)
 {    
     Mat img = imread(fileName, cv::IMREAD_COLOR);
     cout << "Processing " << fileName << endl;
@@ -99,25 +117,19 @@ void detect(Detector &detector, string &fileName, string &outFileName)
     vector<Rect> rects;
     vector<double> scores;
 
-#if defined(HAVE_MPI) && defined(PAR_PYRAMID)
-    int argc;
-    char **argv;
-    MPI_Init(&argc, &argv);
-#endif
-
+    TIMER_START(DETECTION);
     detector.DetectMultiScale(img, labels, scores, rects);
+    TIMER_END(DETECTION);
 
     // write to file on 0 process
-#if defined(HAVE_MPI) && defined(PAR_PYRAMID)
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     if (rank == 0)
-#endif
     {
-        ofstream out(outFileName);
+        ofstream out(outFileName, ios_base::app);
         if (!out.is_open())
         {
-            cout << "Error: output file was not opened." << endl;
+            cout << "Failed to open output file\n";
             cout << help;
             return;
         }
@@ -130,31 +142,62 @@ void detect(Detector &detector, string &fileName, string &outFileName)
         }
         out.close();
     }
-#if defined(HAVE_MPI) && defined(PAR_PYRAMID)
-    MPI_Finalize();
-#endif
 }
 
-void detect(Detector &detector, vector<string> &fileNames, string &outFileName)
+void detect(Detector &detector, const vector<string> &fileNames, const string &outFileName)
 {
+    MPI_Init(0, 0);
+    // Create/clear output file.
+    ofstream outputFile(outFileName);
+
+    for (const auto& filename : fileNames)
+    {
+        detect(detector, filename, outFileName);
+    }
+    MPI_Finalize();
+}
+
+#else
+
+void detect(Detector &detector, const vector<string> &fileNames, const string &outFileName)
+{
+    string fileLine = "";
     for (size_t i = 0; i < fileNames.size(); i++)
     {
-        detect(detector, fileNames[i], outFileName);
-    }    
-}
-#endif
+        string fileName = fileNames[i];
+        Mat img = imread(fileName, cv::IMREAD_COLOR);
+        cout << "Processing " << fileName << endl;
 
+        vector<int> labels;
+        vector<Rect> rects;
+        vector<double> scores;
+        TIMER_START(DETECTION);
+        detector.DetectMultiScale(img, labels, scores, rects);
+        TIMER_END(DETECTION);
+
+        fileLine += fileName + "\n" + to_string(rects.size()) + "\n";
+        for (size_t j = 0; j < rects.size(); j++)
+        {
+            fileLine += to_string(rects[j].x) + " " + to_string(rects[j].y) + " "
+                + to_string(rects[j].width) + " " + to_string(rects[j].height) + " "
+                + to_string(scores[j]) + " \n";
+        }
+    }
+    ofstream res_file(outFileName);
+    res_file << fileLine;
+}
+
+#endif
 
 int main(int argc, char** argv)
 {
-    cout << "Begin main" << endl;
     if (argc < 2) {
         cout << "Too few arguments\n" << help;
-        return 0;
+        return 1;
     }
 
-    Args args;    
-    args.input_path = string(argv[1]);    
+    Args args;
+    args.input_path = string(argv[1]);
 
     string annot = args.input_path + "/annotation.txt";
     string config = args.input_path + "/config.yml";
@@ -166,7 +209,7 @@ int main(int argc, char** argv)
     {
         cout << "Cannot find or open input files\n";
         cout << help;
-        return 0;
+        return 1;
     }
 
     std::string s;
@@ -199,7 +242,9 @@ int main(int argc, char** argv)
     Detector detector(classifier, maxWindowSize, minWindowSize,
                       kPyramidLevels, step, step, min_neighbs, group_rect);
 
+    TIMER_START(OVERALL);
     detect(detector, args.filenames, outFileName);
+    TIMER_END(OVERALL);
 
-    return 1;
+    return 0;
 }
