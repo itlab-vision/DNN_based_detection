@@ -3,6 +3,7 @@
 #include <string>
 #include <stdio.h>
 
+#include "opencv2/core/core.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 
@@ -36,25 +37,11 @@ using cv::Size;
 using cv::FileNode;
 using cv::FileStorage;
 
-struct Args {
-    string input_path;
-    FileNode params_file_node;
-    vector<string> filenames;
-};
-
-const char* help = "detector \"input/folder\"\n\
-    input folder must contain two files:\n\
-    annotation.txt - contains filenames of imgs to detect\n\
-    config.yml - contains description of classifier:\n\
-        step (int)\n\
-        min_neighbs (int)\n\
-        scale (float)\n\
-        group_rect (int 0 or 1)\n\
-        device_id - <0 cpu, >=0 gpu\n\
-        net_description_file\n\
-        net_binary_file\n\
-    output of the program will be written in the input folder\n\
-        \n";
+const char * params =
+    "{ h | help           | | print this message     }"
+    "{ c | config         | | config file            }"
+    "{ a | annotation     | | annotation file        }"
+    "{ o | result         | result.txt | file to save result to }";
 
 
 #if defined(HAVE_MPI) && defined(PAR_SET_IMAGES)
@@ -65,9 +52,6 @@ void detect(Detector &detector, const vector<string> &fileNames, const string &o
     // MPI_File file;
     // MPI_Status status;
     MPI_Init(0, 0);
-
-//    Detector detector(classifier, maxWindowSize, minWindowSize,
-//                      kPyramidLevels, step, step, min_neighbs, group_rect);
 
     MPI_Comm_size(MPI_COMM_WORLD, &np);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -189,61 +173,63 @@ void detect(Detector &detector, const vector<string> &fileNames, const string &o
 
 #endif
 
+
 int main(int argc, char** argv)
 {
-    if (argc < 2) {
-        cout << "Too few arguments\n" << help;
-        return 1;
+    cv::CommandLineParser args(argc, argv, params);
+    cout << args.get<bool>("help") << endl;
+    if (args.get<bool>("help")) {
+        args.printParams();
+        return 0;
     }
 
-    Args args;
-    args.input_path = string(argv[1]);
+    ifstream annotationFile(args.get<string>("annotation"));
+    FileStorage fs(args.get<string>("config"), FileStorage::READ);
 
-    string annot = args.input_path + "/annotation.txt";
-    string config = args.input_path + "/config.yml";
-
-    ifstream content_annot(annot);
-    FileStorage fs(config, FileStorage::READ);
-
-    if (!content_annot.is_open() || !fs.isOpened())
+    if (!annotationFile.is_open() || !fs.isOpened())
     {
-        cout << "Cannot find or open input files\n";
-        cout << help;
-        return 1;
+        cout << "Failed to open input files" << endl;
+        return 0;
     }
 
-    std::string s;
-    while (std::getline(content_annot, s))
+    vector<string> imagesList;
+    string s;
+    while (std::getline(annotationFile, s))
     {
-        args.filenames.push_back(s);
+        imagesList.push_back(s);
     }
 
-    args.params_file_node = fs.root();
+    FileNode detectorParamsNode = fs.root();
 
     ClassifierFactory factory;
     shared_ptr<Classifier> classifier = factory.CreateClassifier(CAFFE_CLASSIFIER);
-    classifier->SetParams(args.params_file_node);
+    classifier->SetParams(detectorParamsNode);
     classifier->Init();
 
-    FileNode params = args.params_file_node;
+
+    int stride, minNeighbours, groupRects, kPyramidLevels;
+    Size windowSize, maxWindowSize, minWindowSize;
     string outFileName;
-    params["output_file_name"] >> outFileName;
-    outFileName = args.input_path + "/" + outFileName;
-    int step = params["step"];
-    int min_neighbs = params["min_neighbs"];
-    int group_rect = params["group_rect"];
-    Size maxWindowSize(params["max_win_width"], params["max_win_height"]),
-         minWindowSize(params["min_win_width"], params["min_win_height"]);
-    int kPyramidLevels = params["pyramid_levels_num"];
-    cout << step << " " << min_neighbs << " " << group_rect << " "
+    detectorParamsNode["output_file_name"] >> outFileName;
+    detectorParamsNode["step"] >> stride;
+    detectorParamsNode["min_neighbs"] >> minNeighbours;
+    detectorParamsNode["group_rect"] >> groupRects;
+    detectorParamsNode["win_size"] >> windowSize;
+    detectorParamsNode["max_win_size"] >> maxWindowSize;
+    detectorParamsNode["min_win_size"] >> minWindowSize;
+    detectorParamsNode["pyramid_levels_num"] >> kPyramidLevels;
+
+    cout << stride << " " << minNeighbours << " " << groupRects << " "
+         << windowSize.width << " " << windowSize.height << " "
          << maxWindowSize.width << " " << maxWindowSize.height << " "
          << minWindowSize.width << " " << minWindowSize.height << " "
          << kPyramidLevels << endl;
-    Detector detector(classifier, maxWindowSize, minWindowSize,
-                      kPyramidLevels, step, step, min_neighbs, group_rect);
+
+    Detector detector(classifier, windowSize, maxWindowSize, minWindowSize,
+                      kPyramidLevels, stride, stride, minNeighbours, groupRects);
 
     TIMER_START(OVERALL);
-    detect(detector, args.filenames, outFileName);
+    detect(detector, imagesList, outFileName);
     TIMER_END(OVERALL);
 
     return 0;

@@ -11,7 +11,7 @@
 class Detector
 {
 public:
-    Detector(std::shared_ptr<Classifier> classifier,
+    Detector(std::shared_ptr<Classifier> classifier, cv::Size window_size,
              cv::Size max_window_size, cv::Size min_window_size,
              int kPyramidLevels, int dx, int dy,
              int min_neighbours, bool group_rect);
@@ -45,6 +45,7 @@ protected:
 #endif
 
     std::shared_ptr<Classifier> classifier;
+    cv::Size window_size;
     cv::Size max_window_size;
     cv::Size min_window_size;
     int kPyramidLevels;

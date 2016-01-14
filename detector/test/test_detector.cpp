@@ -169,7 +169,7 @@ TEST(Detector, check_number_of_levels_in_image_pyramid)
     cv::Size max_window_size(227, 227), min_window_size(60, 60);
     int min_neighbours = 3, dx = 1, dy = 1, kPyramidLevels = 2;
     bool group_rect = true;
-    Detector detector(classifier, max_window_size, min_window_size,
+    Detector detector(classifier, max_window_size, max_window_size, min_window_size,
         kPyramidLevels, dx, dy, min_neighbours, group_rect);
 
     cv::Mat img(363, 450, CV_8UC3);
@@ -189,7 +189,7 @@ TEST(Detector, check_create_image_pyramid_failed)
     int kPyramidLevels = 3;
     int min_neighbours = 3, dx = 1, dy = 1;
     bool group_rect = true;
-    Detector detector(classifier, max_window_size, min_window_size,
+    Detector detector(classifier, max_window_size, max_window_size, min_window_size,
         kPyramidLevels, dx, dy, min_neighbours, group_rect);
 
     cv::Mat img(363, 450, CV_8UC3);

@@ -35,10 +35,12 @@ void Detector::Preprocessing(Mat &img)
 }
 
 Detector::Detector(std::shared_ptr<Classifier> classifier_,
-             cv::Size max_window_size_, cv::Size min_window_size_,
+             Size window_size_,
+             Size max_window_size_, Size min_window_size_,
              int kPyramidLevels_, int dx_ = 1, int dy_ = 1,
              int min_neighbours_ = 3, bool group_rect_ = false)
     : classifier(classifier_),
+      window_size(window_size_),
       max_window_size(max_window_size_),
       min_window_size(min_window_size_),
       kPyramidLevels(kPyramidLevels_),
@@ -48,39 +50,27 @@ Detector::Detector(std::shared_ptr<Classifier> classifier_,
       group_rect(group_rect_)
 {}
 
-void Detector::CreateImagePyramid(const cv::Mat &img, std::vector<Mat> &pyramid,
-                                  std::vector<float> &scales)
+void Detector::CreateImagePyramid(const Mat &img, vector<Mat> &pyramid,
+                                  vector<float> &scales)
 {
-    pyramid.clear();    
-    int kLevels = 0;
-    float scale = powf(((float)max_window_size.width) / ((float)min_window_size.width), 
-                       1.0f / ((float)kPyramidLevels - 1.0f));
-    Mat resizedImg;
-    img.copyTo(resizedImg);
-    float scaleFactor = 1.0f;
-    // decrease image size = increase window size
-    while (resizedImg.cols >= max_window_size.width &&
-           resizedImg.rows >= max_window_size.height)
-    {
-        pyramid.push_back(resizedImg.clone());
-        scales.push_back(scaleFactor);
-        scaleFactor /= scale;        
+    CV_Assert(!img.empty());
+    pyramid.clear();
+    scales.clear();
+
+    float scaleMin = min_window_size.height / static_cast<float>(window_size.height);
+    float scaleMax = max_window_size.height / static_cast<float>(window_size.height);
+    float scaleStep = powf(scaleMax / scaleMin, 1.0f / (kPyramidLevels - 1.0f));
+    cout << scaleMin << " -- " << scaleMax << " by " << scaleStep << endl;
+    float scale = scaleMin;
+    for (int i = 0; i < kPyramidLevels; ++i) {
+        cout << scale << endl;
+        Mat resizedImg;
         resize(img, resizedImg,
-               Size(img.cols * scaleFactor, img.rows * scaleFactor),
-               0, 0, INTER_LINEAR);
-        kLevels++;
-    }
-    // increase image size = decrease window size
-    scaleFactor = 1.0f;
-    while (kLevels < kPyramidLevels)
-    {
-        scaleFactor *= scale;
-        resize(img, resizedImg,
-               Size(img.cols * scaleFactor, img.rows * scaleFactor),
+               Size(img.cols / scale, img.rows / scale),
                0, 0, INTER_LINEAR);
         pyramid.push_back(resizedImg.clone());
-        scales.push_back(scaleFactor);
-        kLevels++;
+        scales.push_back(scale);
+        scale *= scaleStep;
     }
 }
 
@@ -91,23 +81,22 @@ void Detector::Detect(Mat &layer, vector<int> &labels,
         const double mergeRectThreshold)
 {
     vector<Rect> layerRect;
-    for (int y = 0; y < layer.rows - max_window_size.height + 1; y += dy)
+    for (int y = 0; y < layer.rows - window_size.height + 1; y += dy)
     {
-        for (int x = 0; x < layer.cols - max_window_size.width + 1; x += dx)
+        for (int x = 0; x < layer.cols - window_size.width + 1; x += dx)
         {
-            Rect rect(x, y, max_window_size.width, max_window_size.height);
+            Rect rect(x, y, window_size.width, window_size.height);
             Mat window = layer(rect);
-
             Classifier::Result result = classifier->Classify(window);
-            if (fabs(result.confidence2) > detectorThreshold && result.label != 0)
+            if (result.confidence2 > detectorThreshold && result.label != 0)
             {
                 labels.push_back(result.label);
                 scores.push_back(result.confidence2);
                 layerRect.push_back(
-                    Rect(cvRound(rect.x      / scaleFactor),
-                         cvRound(rect.y      / scaleFactor),
-                         cvRound(rect.width  / scaleFactor),
-                         cvRound(rect.height / scaleFactor)) );
+                    Rect(cvRound(rect.x      * scaleFactor),
+                         cvRound(rect.y      * scaleFactor),
+                         cvRound(rect.width  * scaleFactor),
+                         cvRound(rect.height * scaleFactor)) );
             }
         }
     }
@@ -120,31 +109,29 @@ void Detector::Detect(Mat &layer, vector<int> &labels,
 }
 
 #if defined(HAVE_MPI) && defined(PAR_PYRAMID)
-void Detector::GetLayerWindowsNumber(std::vector<cv::Mat> &imgPyramid,
-        std::vector<int> &winNum)
+void Detector::GetLayerWindowsNumber(vector<Mat> &imgPyramid, vector<int> &winNum)
 {
     winNum.clear();
     int kLayers = imgPyramid.size();
     for (int i = 0; i < kLayers; i++)
     {       
-        int kWins = (imgPyramid[i].cols - max_window_size.width + 1) * 
-                    (imgPyramid[i].rows - max_window_size.height + 1) / 
-                    (dx * dy);
+        int kWins = ((imgPyramid[i].cols - window_size.width) / dx + 1) *
+                    ((imgPyramid[i].rows - window_size.height) / dy + 1);
         winNum.push_back(kWins);
     }
 }
 
-void Detector::CreateParallelExecutionSchedule(std::vector<int> &winNum,
-        std::vector<std::vector<int> > &levels)
+void Detector::CreateParallelExecutionSchedule(vector<int> &winNum,
+        vector<vector<int> > &levels)
 {
     // sort in descending order.
     int kLevels = winNum.size(), np = levels.size();
-    vector<int> indeces(kLevels), weights(np), disp(np);
+    vector<int> indices(kLevels), weights(np), disp(np);
     for (int i = 0; i < kLevels; i++)
     {
-        indeces[i] = i;
+        indices[i] = i;
     }
-    sort(indeces.begin(), indeces.end(),
+    sort(indices.begin(), indices.end(),
       [&winNum](size_t i1, size_t i2) 
         { return winNum[i1] > winNum[i2]; });
     sort(winNum.begin(), winNum.end(), 
@@ -155,13 +142,13 @@ void Detector::CreateParallelExecutionSchedule(std::vector<int> &winNum,
     {
         for (int i = 0; i < kLevels; i++)
         {
-            levels[i].push_back(indeces[i]);
+            levels[i].push_back(indices[i]);
         }
         return;
     }
     for (int i = 0; i < np; i++)
     {
-        levels[i].push_back(indeces[i]);
+        levels[i].push_back(indices[i]);
         weights[i] = winNum[i];
         disp[i] = 0;
     }
@@ -192,14 +179,14 @@ void Detector::CreateParallelExecutionSchedule(std::vector<int> &winNum,
             }
         }
         // add index of the layer to the corresponding process.
-        levels[argMin].push_back(indeces[i]);
+        levels[argMin].push_back(indices[i]);
     }    
 }
 
-void Detector::Detect(std::vector<cv::Mat> &imgPyramid,
+void Detector::Detect(vector<Mat> &imgPyramid,
         vector<vector<int> > &levels, vector<float> &scales,
-        std::vector<int> &labels, std::vector<double> &scores,
-        std::vector<cv::Rect> &rects,
+        vector<int> &labels, vector<double> &scores,
+        vector<Rect> &rects,
         const float detectorThreshold,
         const double mergeRectThreshold)
 {
