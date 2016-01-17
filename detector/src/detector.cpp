@@ -37,12 +37,14 @@ void Detector::Preprocessing(Mat &img)
 Detector::Detector(std::shared_ptr<Classifier> classifier_,
              Size window_size_,
              Size max_window_size_, Size min_window_size_,
+             int batch_size,
              int kPyramidLevels_, int dx_ = 1, int dy_ = 1,
              int min_neighbours_ = 3, bool group_rect_ = false)
     : classifier(classifier_),
       window_size(window_size_),
       max_window_size(max_window_size_),
       min_window_size(min_window_size_),
+      batchSize(batch_size),
       kPyramidLevels(kPyramidLevels_),
       dx(dx_),
       dy(dy_),
@@ -74,38 +76,67 @@ void Detector::CreateImagePyramid(const Mat &img, vector<Mat> &pyramid,
     }
 }
 
+
 void Detector::Detect(Mat &layer, vector<int> &labels,
         vector<double> &scores, vector<Rect> &rects,
         const float scaleFactor,
         const float detectorThreshold, 
         const double mergeRectThreshold)
 {
-    vector<Rect> layerRect;
+    vector<Rect> rois(batchSize);
+    vector<Mat> windows(batchSize);
+    int batchCounter = 0;
     for (int y = 0; y < layer.rows - window_size.height + 1; y += dy)
     {
         for (int x = 0; x < layer.cols - window_size.width + 1; x += dx)
         {
             Rect rect(x, y, window_size.width, window_size.height);
-            Mat window = layer(rect);
-            Classifier::Result result = classifier->Classify(window);
-            if (result.confidence2 > detectorThreshold && result.label != 0)
+            rois[batchCounter] = rect;
+            windows[batchCounter] = layer(rect);
+            ++batchCounter;
+            if (batchCounter == batchSize)
             {
-                labels.push_back(result.label);
-                scores.push_back(result.confidence2);
-                layerRect.push_back(
-                    Rect(cvRound(rect.x      * scaleFactor),
-                         cvRound(rect.y      * scaleFactor),
-                         cvRound(rect.width  * scaleFactor),
-                         cvRound(rect.height * scaleFactor)) );
+                vector<Classifier::Result> results = classifier->Classify(windows);
+                for (int i = 0; i < batchCounter; ++i)
+                {
+                    const Classifier::Result& res = results[i];
+                    const Rect& r = rois[i];
+                    if (res.confidence2 > detectorThreshold && res.label != 0)
+                    {
+                        labels.push_back(res.label);
+                        scores.push_back(res.confidence2);
+                        rects.push_back(
+                            Rect(cvRound(r.x      * scaleFactor),
+                                 cvRound(r.y      * scaleFactor),
+                                 cvRound(r.width  * scaleFactor),
+                                 cvRound(r.height * scaleFactor)) );
+                    }
+                }
+                batchCounter = 0;
             }
         }
     }
-    if (group_rect)
+
+    if (batchCounter > 0)
     {
-        // FIX: groupRectangles doesn't modify labels and scores.
-        groupRectangles(layerRect, min_neighbours, mergeRectThreshold);
+        vector<Classifier::Result> results = classifier->Classify(windows);
+        for (int i = 0; i < batchCounter; ++i)
+        {
+            const Classifier::Result& res = results[i];
+            const Rect& r = rois[i];
+            if (res.confidence2 > detectorThreshold && res.label != 0)
+            {
+                labels.push_back(res.label);
+                scores.push_back(res.confidence2);
+                rects.push_back(
+                    Rect(cvRound(r.x      * scaleFactor),
+                         cvRound(r.y      * scaleFactor),
+                         cvRound(r.width  * scaleFactor),
+                         cvRound(r.height * scaleFactor)) );
+            }
+        }
+        batchCounter = 0;
     }
-    rects.insert(rects.end(), layerRect.begin(), layerRect.end());
 }
 
 #if defined(HAVE_MPI) && defined(PAR_PYRAMID)
@@ -289,6 +320,11 @@ void Detector::DetectMultiScale(const Mat &img, vector<int> &labels,
         cout << "Process level " << i << ", scale factor equals " << scales[i] << endl;
         Detect(imgPyramid[i], labels, scores, rects, scales[i], 
           detectorThreshold, mergeRectThreshold);
+        if (group_rect)
+        {
+            // FIX: groupRectangles doesn't modify labels and scores.
+            groupRectangles(rects, min_neighbours, mergeRectThreshold);
+        }
     }
 #endif
 }

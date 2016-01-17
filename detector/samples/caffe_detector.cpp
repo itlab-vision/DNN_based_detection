@@ -207,7 +207,7 @@ int main(int argc, char** argv)
     classifier->Init();
 
 
-    int stride, minNeighbours, groupRects, kPyramidLevels;
+    int stride, minNeighbours, groupRects, kPyramidLevels, batchSize;
     Size windowSize, maxWindowSize, minWindowSize;
     string outFileName;
     detectorParamsNode["output_file_name"] >> outFileName;
@@ -218,6 +218,7 @@ int main(int argc, char** argv)
     detectorParamsNode["max_win_size"] >> maxWindowSize;
     detectorParamsNode["min_win_size"] >> minWindowSize;
     detectorParamsNode["pyramid_levels_num"] >> kPyramidLevels;
+    detectorParamsNode["batch_size"] >> batchSize;
 
     cout << stride << " " << minNeighbours << " " << groupRects << " "
          << windowSize.width << " " << windowSize.height << " "
@@ -225,7 +226,7 @@ int main(int argc, char** argv)
          << minWindowSize.width << " " << minWindowSize.height << " "
          << kPyramidLevels << endl;
 
-    Detector detector(classifier, windowSize, maxWindowSize, minWindowSize,
+    Detector detector(classifier, windowSize, maxWindowSize, minWindowSize, batchSize,
                       kPyramidLevels, stride, stride, minNeighbours, groupRects);
 
     TIMER_START(OVERALL);
