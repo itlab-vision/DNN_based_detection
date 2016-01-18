@@ -78,8 +78,7 @@ void Detector::CreateImagePyramid(const Mat &img, vector<Mat> &pyramid,
 void Detector::Detect(Mat &layer, vector<int> &labels,
         vector<double> &scores, vector<Rect> &rects,
         const float scaleFactor,
-        const float detectorThreshold, 
-        const double mergeRectThreshold)
+        const float detectorThreshold)
 {
     int windowsNum = ((layer.cols - window_size.width) / dx + 1) *
                      ((layer.rows - window_size.height) / dy + 1);
@@ -212,7 +211,7 @@ void Detector::Detect(vector<Mat> &imgPyramid,
         cout << "Process " << rank << ": " << endl
              << "\tLevelId: " <<  levelId << " (scale = " << scales[levelId] << ")" << endl;
         Detect(imgPyramid[levelId], procLabels, procScores, procRects,
-            scales[levelId], detectorThreshold, mergeRectThreshold);
+            scales[levelId], detectorThreshold);
         cout << "kLabels = " << procLabels.size()
              << ", kScores = " << procScores.size()
              << ", kRects =  " << procRects.size() << endl;
@@ -294,8 +293,7 @@ void Detector::DetectMultiScale(const Mat &img, vector<int> &labels,
     for (size_t i = 0; i < imgPyramid.size(); i++)
     {
         cout << "Process level " << i << ", scale factor equals " << scales[i] << endl;
-        Detect(imgPyramid[i], labels, scores, rects, scales[i], 
-          detectorThreshold, mergeRectThreshold);
+        Detect(imgPyramid[i], labels, scores, rects, scales[i], detectorThreshold);
         if (group_rect)
         {
             // FIX: groupRectangles doesn't modify labels and scores.

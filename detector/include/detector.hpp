@@ -18,8 +18,7 @@ public:
     void Detect(cv::Mat &layer, std::vector<int> &labels,
             std::vector<double> &scores, std::vector<cv::Rect> &rects,
             const float scaleFactor,
-            const float detectorThreshold, 
-            const double mergeRectThreshold);
+            const float detectorThreshold);
     void DetectMultiScale(const cv::Mat &img, std::vector<int> &labels,
             std::vector<double> &scores, std::vector<cv::Rect> &rects,
             const float detectorThreshold = 0.5f,

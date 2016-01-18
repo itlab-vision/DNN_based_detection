@@ -8,6 +8,7 @@
 #include <vector>
 #include <memory>
 
+# if 0
 #if defined(HAVE_MPI) && defined(PAR_PYRAMID)
 
 class TestableDetector : public Detector
@@ -252,3 +253,4 @@ TEST(Detector, check_image_pyramid_algorithm)
                   << scales[i] << std::endl;
     }
 }
+#endif
