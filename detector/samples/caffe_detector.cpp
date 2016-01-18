@@ -114,7 +114,6 @@ void detect(Detector &detector, const string &fileName, const string &outFileNam
         if (!out.is_open())
         {
             cout << "Failed to open output file\n";
-            cout << help;
             return;
         }
         out << fileName << endl << rects.size() << endl;
