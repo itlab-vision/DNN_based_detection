@@ -37,14 +37,12 @@ void Detector::Preprocessing(Mat &img)
 Detector::Detector(std::shared_ptr<Classifier> classifier_,
              Size window_size_,
              Size max_window_size_, Size min_window_size_,
-             int batch_size,
              int kPyramidLevels_, int dx_ = 1, int dy_ = 1,
              int min_neighbours_ = 3, bool group_rect_ = false)
     : classifier(classifier_),
       window_size(window_size_),
       max_window_size(max_window_size_),
       min_window_size(min_window_size_),
-      batchSize(batch_size),
       kPyramidLevels(kPyramidLevels_),
       dx(dx_),
       dy(dy_),
@@ -83,59 +81,37 @@ void Detector::Detect(Mat &layer, vector<int> &labels,
         const float detectorThreshold, 
         const double mergeRectThreshold)
 {
-    vector<Rect> rois(batchSize);
-    vector<Mat> windows(batchSize);
-    int batchCounter = 0;
+    int windowsNum = ((layer.cols - window_size.width) / dx + 1) *
+                     ((layer.rows - window_size.height) / dy + 1);
+    vector<Rect> rois(windowsNum);
+    vector<Mat> windows(windowsNum);
+    int i = 0;
     for (int y = 0; y < layer.rows - window_size.height + 1; y += dy)
     {
         for (int x = 0; x < layer.cols - window_size.width + 1; x += dx)
         {
             Rect rect(x, y, window_size.width, window_size.height);
-            rois[batchCounter] = rect;
-            windows[batchCounter] = layer(rect);
-            ++batchCounter;
-            if (batchCounter == batchSize)
-            {
-                vector<Classifier::Result> results = classifier->Classify(windows);
-                for (int i = 0; i < batchCounter; ++i)
-                {
-                    const Classifier::Result& res = results[i];
-                    const Rect& r = rois[i];
-                    if (res.confidence2 > detectorThreshold && res.label != 0)
-                    {
-                        labels.push_back(res.label);
-                        scores.push_back(res.confidence2);
-                        rects.push_back(
-                            Rect(cvRound(r.x      * scaleFactor),
-                                 cvRound(r.y      * scaleFactor),
-                                 cvRound(r.width  * scaleFactor),
-                                 cvRound(r.height * scaleFactor)) );
-                    }
-                }
-                batchCounter = 0;
-            }
+            rois[i] = rect;
+            windows[i] = layer(rect);
+            ++i;
         }
     }
 
-    if (batchCounter > 0)
+    vector<Classifier::Result> results = classifier->Classify(windows);
+    for (int j = 0; j < windowsNum; ++j)
     {
-        vector<Classifier::Result> results = classifier->Classify(windows);
-        for (int i = 0; i < batchCounter; ++i)
+        const Classifier::Result& res = results[j];
+        const Rect& r = rois[j];
+        if (res.confidence2 > detectorThreshold && res.label != 0)
         {
-            const Classifier::Result& res = results[i];
-            const Rect& r = rois[i];
-            if (res.confidence2 > detectorThreshold && res.label != 0)
-            {
-                labels.push_back(res.label);
-                scores.push_back(res.confidence2);
-                rects.push_back(
-                    Rect(cvRound(r.x      * scaleFactor),
-                         cvRound(r.y      * scaleFactor),
-                         cvRound(r.width  * scaleFactor),
-                         cvRound(r.height * scaleFactor)) );
-            }
+            labels.push_back(res.label);
+            scores.push_back(res.confidence2);
+            rects.push_back(
+                Rect(cvRound(r.x      * scaleFactor),
+                     cvRound(r.y      * scaleFactor),
+                     cvRound(r.width  * scaleFactor),
+                     cvRound(r.height * scaleFactor)) );
         }
-        batchCounter = 0;
     }
 }
 
