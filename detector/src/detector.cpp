@@ -60,10 +60,10 @@ void Detector::CreateImagePyramid(const Mat &img, vector<Mat> &pyramid,
     float scaleMin = min_window_size.height / static_cast<float>(window_size.height);
     float scaleMax = max_window_size.height / static_cast<float>(window_size.height);
     float scaleStep = powf(scaleMax / scaleMin, 1.0f / (kPyramidLevels - 1.0f));
-    cout << scaleMin << " -- " << scaleMax << " by " << scaleStep << endl;
+//    cout << scaleMin << " -- " << scaleMax << " by " << scaleStep << endl;
     float scale = scaleMin;
     for (int i = 0; i < kPyramidLevels; ++i) {
-        cout << scale << endl;
+//        cout << scale << endl;
         Mat resizedImg;
         resize(img, resizedImg,
                Size(img.cols / scale, img.rows / scale),
