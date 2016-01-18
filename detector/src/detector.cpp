@@ -82,6 +82,10 @@ void Detector::Detect(Mat &layer, vector<int> &labels,
 {
     int windowsNum = ((layer.cols - window_size.width) / dx + 1) *
                      ((layer.rows - window_size.height) / dy + 1);
+    if (windowsNum <= 0)
+    {
+        return;
+    }
     vector<Rect> rois(windowsNum);
     vector<Mat> windows(windowsNum);
     int i = 0;

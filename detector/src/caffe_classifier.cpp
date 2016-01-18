@@ -195,7 +195,7 @@ vector<CaffeClassifier::Result> CaffeClassifier::Classify(const vector<Mat>& ima
         impl->net->ForwardPrefilled();
         // Get classification result.
         auto batchClassificationResults = impl->GetPrediction(impl->softmax_blob);
-        classificationResults.insert(classificationResults.end(), batchClassificationResults.begin(), batchClassificationResults.end());
+        classificationResults.insert(classificationResults.end(), batchClassificationResults.begin(), batchClassificationResults.begin() + batchCounter);
     }
     return classificationResults;
 }

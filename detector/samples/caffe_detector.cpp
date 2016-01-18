@@ -205,7 +205,6 @@ int main(int argc, char** argv)
     classifier->SetParams(detectorParamsNode);
     classifier->Init();
 
-
     int stride, minNeighbours, groupRects, kPyramidLevels;
     Size windowSize, maxWindowSize, minWindowSize;
     string outFileName;
