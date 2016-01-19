@@ -1,6 +1,7 @@
 #include "caffe_classifier.hpp"
 
 #include "caffe/caffe.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
 
 #include <memory>
 
@@ -172,12 +173,15 @@ CaffeClassifier::Result CaffeClassifier::Classify(Mat& image)
 vector<CaffeClassifier::Result> CaffeClassifier::Classify(const vector<Mat>& images)
 {
     int batchSize = impl->data_blob->shape(0);
+    cv::Size inputSize(impl->data_blob->shape(3), impl->data_blob->shape(2));
     vector<Mat> batch(batchSize);
     int batchCounter = 0;
     vector<CaffeClassifier::Result> classificationResults;
     for (const auto& image : images)
     {
-        batch[batchCounter] = image;
+        Mat imageResized;
+        cv::resize(image, imageResized, inputSize);
+        batch[batchCounter] = imageResized;
         ++batchCounter;
         if (batchCounter == batchSize) {
             impl->FillBlob(batch, impl->data_blob);
