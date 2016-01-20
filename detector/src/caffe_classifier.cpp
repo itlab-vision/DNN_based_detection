@@ -194,6 +194,10 @@ vector<CaffeClassifier::Result> CaffeClassifier::Classify(const vector<Mat>& ima
         }
     }
     if (batchCounter > 0) {
+        for (size_t i = batchCounter; i < batchSize; ++i)
+        {
+            batch[i] = batch[batchCounter - 1];
+        }
         impl->FillBlob(batch, impl->data_blob);
         // Pass data through the net.
         impl->net->ForwardPrefilled();
