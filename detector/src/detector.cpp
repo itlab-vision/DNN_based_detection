@@ -60,10 +60,8 @@ void Detector::CreateImagePyramid(const Mat &img, vector<Mat> &pyramid,
     float scaleMin = min_window_size.height / static_cast<float>(window_size.height);
     float scaleMax = max_window_size.height / static_cast<float>(window_size.height);
     float scaleStep = powf(scaleMax / scaleMin, 1.0f / (kPyramidLevels - 1.0f));
-//    cout << scaleMin << " -- " << scaleMax << " by " << scaleStep << endl;
     float scale = scaleMin;
     for (int i = 0; i < kPyramidLevels; ++i) {
-//        cout << scale << endl;
         Mat resizedImg;
         resize(img, resizedImg,
                Size(img.cols / scale, img.rows / scale),
@@ -296,7 +294,6 @@ void Detector::DetectMultiScale(const Mat &img, vector<int> &labels,
     CreateImagePyramid(img, imgPyramid, scales);
     for (size_t i = 0; i < imgPyramid.size(); i++)
     {
-        cout << "Process level " << i << ", scale factor equals " << scales[i] << endl;
         Detect(imgPyramid[i], labels, scores, rects, scales[i], detectorThreshold);
         if (group_rect)
         {

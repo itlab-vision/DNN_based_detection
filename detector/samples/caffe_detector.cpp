@@ -38,9 +38,9 @@ using cv::FileNode;
 using cv::FileStorage;
 
 const char * params =
-    "{ h | help           | | print this message     }"
-    "{ c | config         | | config file            }"
-    "{ a | annotation     | | annotation file        }"
+    "{ h | help           | false      | print help message     }"
+    "{ c | config         |            | config file            }"
+    "{ a | annotation     |            | annotation file        }"
     "{ o | result         | result.txt | file to save result to }";
 
 
@@ -49,8 +49,6 @@ const char * params =
 void detect(Detector &detector, const vector<string> &fileNames, const string &outFileName)
 {
     int rank, np, fileStep, leftIdx, rigthIdx;
-    // MPI_File file;
-    // MPI_Status status;
     MPI_Init(0, 0);
 
     MPI_Comm_size(MPI_COMM_WORLD, &np);
@@ -83,10 +81,6 @@ void detect(Detector &detector, const vector<string> &fileNames, const string &o
     }
     ofstream res_file(outFileName + to_string(rank) + ".txt");
     res_file << fileLine;
-    // MPI_File_open(MPI_COMM_WORLD, (char *)outFileName.c_str(),
-    //     MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &file);
-    // MPI_File_write_ordered(file, (void *)fileLine.c_str(), fileLine.length(), MPI_CHAR, &status);
-    // MPI_File_close(&file);
     MPI_Finalize();
 }
 
@@ -176,7 +170,6 @@ void detect(Detector &detector, const vector<string> &fileNames, const string &o
 int main(int argc, char** argv)
 {
     cv::CommandLineParser args(argc, argv, params);
-    cout << args.get<bool>("help") << endl;
     if (args.get<bool>("help")) {
         args.printParams();
         return 0;
