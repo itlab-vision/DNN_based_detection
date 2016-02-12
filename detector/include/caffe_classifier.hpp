@@ -21,7 +21,7 @@ public:
     virtual std::vector<Result> Classify(const std::vector<cv::Mat>& images);    
     virtual ~CaffeClassifier();
 
-    friend ClassifierFactory;
+    friend class ClassifierFactory;
 
 private:
     struct Impl;
